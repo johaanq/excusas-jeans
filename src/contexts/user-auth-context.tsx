@@ -47,16 +47,30 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
           await loadCart(userData.id)
         } else {
           console.error('Error fetching user data:', userError)
-          // Limpiar token inválido
+          // Limpiar tokens inválidos
+          await supabase.auth.signOut()
           localStorage.removeItem('user_token')
+          setUser(null)
+          setIsAuthenticated(false)
         }
       } else {
         // No hay sesión activa, limpiar estado
+        await supabase.auth.signOut()
         localStorage.removeItem('user_token')
+        setUser(null)
+        setIsAuthenticated(false)
       }
     } catch (error) {
       console.error('Error checking auth:', error)
+      // Limpiar tokens inválidos en caso de error
+      try {
+        await supabase.auth.signOut()
+      } catch (signOutError) {
+        console.error('Error signing out:', signOutError)
+      }
       localStorage.removeItem('user_token')
+      setUser(null)
+      setIsAuthenticated(false)
     } finally {
       setIsLoading(false)
     }
@@ -64,6 +78,40 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     checkAuth()
+
+    // Escuchar cambios en la autenticación de Supabase
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.id)
+        
+        if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
+          if (event === 'SIGNED_OUT') {
+            setUser(null)
+            setCarrito(null)
+            setIsAuthenticated(false)
+            localStorage.removeItem('user_token')
+          }
+        } else if (event === 'SIGNED_IN' && session?.user) {
+          // Usuario se autenticó, obtener datos
+          const { data: userData, error: userError } = await supabase
+            .from('usuarios')
+            .select('*')
+            .eq('id', session.user.id)
+            .single()
+
+          if (userData && !userError) {
+            setUser(userData)
+            setIsAuthenticated(true)
+            await loadCart(userData.id)
+            localStorage.setItem('user_token', session.access_token)
+          }
+        }
+      }
+    )
+
+    return () => {
+      subscription.unsubscribe()
+    }
   }, [checkAuth])
 
   const loadCart = async (userId: string) => {

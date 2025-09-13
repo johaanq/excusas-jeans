@@ -10,7 +10,11 @@ import { generateWhatsAppMessage, openWhatsApp } from "@/lib/utils"
 import Image from "next/image"
 import { useUserAuth } from "@/contexts/user-auth-context"
 
-export function CartDrawer() {
+interface CartDrawerProps {
+  isScrolled?: boolean
+}
+
+export function CartDrawer({ isScrolled = false }: CartDrawerProps) {
   const { items, updateQuantity, removeItem, getTotalItems, getTotalPrice, clearCart } = useCart()
   const { user, isAuthenticated } = useUserAuth()
   const [isOpen, setIsOpen] = useState(false)
@@ -41,7 +45,11 @@ export function CartDrawer() {
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative">
+        <Button variant="ghost" size="icon" className={`relative transition-colors ${
+          isScrolled 
+            ? 'text-gray-600 hover:text-gray-900' 
+            : 'text-white hover:text-gray-200'
+        }`}>
           <ShoppingBag className="h-5 w-5" />
           {getTotalItems() > 0 && (
             <Badge

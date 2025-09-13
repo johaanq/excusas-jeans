@@ -9,14 +9,30 @@ import { CartDrawer } from "@/components/cart/cart-drawer"
 import { ClientOnly } from "@/components/ui/client-only"
 import { useUserAuth } from "@/contexts/user-auth-context"
 import { generateWhatsAppMessage, openWhatsApp } from "@/lib/utils"
+import { useState, useEffect } from "react"
 
 function HeaderContent() {
   const { user, isAuthenticated, logout } = useUserAuth()
+  const [isScrolled, setIsScrolled] = useState(false)
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.scrollY
+      setIsScrolled(scrollTop > 50)
+    }
+
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
 
   return (
     <>
-      <header className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur-md border-b border-gray-200">
+      <header className={`fixed top-0 z-50 w-full transition-all duration-300 ${
+        isScrolled 
+          ? 'bg-white/95 backdrop-blur-md' 
+          : 'bg-transparent'
+      }`}>
         <div className="container mx-auto px-4">
           <div className="flex h-20 items-center justify-between">
             {/* Logo */}
@@ -31,18 +47,32 @@ function HeaderContent() {
                   priority
                 />
               </div>
-              <span className="font-bold text-2xl text-gray-900">Excusas</span>
+              <span className={`font-bold text-2xl transition-colors ${
+                isScrolled ? 'text-gray-900' : 'text-white drop-shadow-lg'
+              }`}>Excusas</span>
             </Link>
 
             {/* Navegación centrada */}
             <nav className="hidden md:flex items-center space-x-8">
-              <Link href="/" className="text-gray-700 hover:text-gray-900 transition-colors font-medium">
+              <Link href="/" className={`transition-colors font-medium ${
+                isScrolled 
+                  ? 'text-gray-700 hover:text-gray-900' 
+                  : 'text-white hover:text-gray-200 drop-shadow-lg'
+              }`}>
                 Inicio
               </Link>
-              <Link href="/catalogo" className="text-gray-700 hover:text-gray-900 transition-colors font-medium">
+              <Link href="/catalogo" className={`transition-colors font-medium ${
+                isScrolled 
+                  ? 'text-gray-700 hover:text-gray-900' 
+                  : 'text-white hover:text-gray-200 drop-shadow-lg'
+              }`}>
                 Catálogo
               </Link>
-              <Link href="/about" className="text-gray-700 hover:text-gray-900 transition-colors font-medium">
+              <Link href="/about" className={`transition-colors font-medium ${
+                isScrolled 
+                  ? 'text-gray-700 hover:text-gray-900' 
+                  : 'text-white hover:text-gray-200 drop-shadow-lg'
+              }`}>
                 Sobre Nosotros
               </Link>
             </nav>
@@ -53,7 +83,11 @@ function HeaderContent() {
                 href="https://www.instagram.com/excusas.jeans/" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="hidden sm:flex items-center justify-center w-10 h-10 text-gray-600 hover:text-purple-600 transition-colors"
+                className={`hidden sm:flex items-center justify-center w-10 h-10 transition-colors ${
+                  isScrolled 
+                    ? 'text-gray-600 hover:text-purple-600' 
+                    : 'text-white hover:text-purple-200 drop-shadow-lg'
+                }`}
                 title="Instagram"
               >
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -66,7 +100,11 @@ function HeaderContent() {
                 href="https://wa.me/51934762253" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="hidden sm:flex items-center justify-center w-10 h-10 text-gray-600 hover:text-green-600 transition-colors"
+                className={`hidden sm:flex items-center justify-center w-10 h-10 transition-colors ${
+                  isScrolled 
+                    ? 'text-gray-600 hover:text-green-600' 
+                    : 'text-white hover:text-green-200 drop-shadow-lg'
+                }`}
                 title="WhatsApp"
               >
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -79,9 +117,9 @@ function HeaderContent() {
                 <div className="w-10 h-10 bg-gray-200 rounded"></div>
               }>
                 {isAuthenticated ? (
-                  <CartDrawerEnhanced />
+                  <CartDrawerEnhanced isScrolled={isScrolled} />
                 ) : (
-                  <CartDrawer />
+                  <CartDrawer isScrolled={isScrolled} />
                 )}
               </ClientOnly>
 
@@ -95,7 +133,11 @@ function HeaderContent() {
                 {isAuthenticated ? (
                   <div className="flex items-center space-x-2">
                     <Link href="/perfil">
-                      <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-900">
+                      <Button variant="ghost" size="sm" className={`transition-colors ${
+                        isScrolled 
+                          ? 'text-gray-600 hover:text-gray-900' 
+                          : 'text-white hover:text-gray-200'
+                      }`}>
                         <User className="w-4 h-4 mr-1" />
                         <span className="hidden sm:inline">{user?.nombre}</span>
                       </Button>
@@ -104,7 +146,11 @@ function HeaderContent() {
                       variant="ghost" 
                       size="sm" 
                       onClick={logout}
-                      className="text-gray-600 hover:text-gray-900"
+                      className={`transition-colors ${
+                        isScrolled 
+                          ? 'text-gray-600 hover:text-gray-900' 
+                          : 'text-white hover:text-gray-200'
+                      }`}
                     >
                       <LogOut className="w-4 h-4" />
                     </Button>
@@ -112,12 +158,20 @@ function HeaderContent() {
                 ) : (
                   <div className="flex items-center space-x-2">
                     <Link href="/auth/login">
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" className={`transition-colors ${
+                        isScrolled 
+                          ? 'text-gray-600 hover:text-gray-900' 
+                          : 'text-white hover:text-gray-200'
+                      }`}>
                         Iniciar Sesión
                       </Button>
                     </Link>
                     <Link href="/auth/register">
-                      <Button variant="outline" size="sm">
+                      <Button variant="ghost" size="sm" className={`transition-colors ${
+                        isScrolled 
+                          ? 'text-gray-600 hover:text-gray-900 hover:bg-gray-50' 
+                          : 'text-white hover:text-gray-200 hover:bg-white/10'
+                      }`}>
                         Registrarse
                       </Button>
                     </Link>
@@ -125,7 +179,11 @@ function HeaderContent() {
                 )}
               </ClientOnly>
 
-              <Button variant="ghost" size="icon" className="md:hidden">
+              <Button variant="ghost" size="icon" className={`md:hidden transition-colors ${
+                isScrolled 
+                  ? 'text-gray-600 hover:text-gray-900' 
+                  : 'text-white hover:text-gray-200'
+              }`}>
                 <Menu className="h-5 w-5" />
               </Button>
             </div>

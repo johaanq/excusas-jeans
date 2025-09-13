@@ -12,7 +12,11 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { generateWhatsAppMessage, openWhatsApp } from '@/lib/utils'
 
-export function CartDrawerEnhanced() {
+interface CartDrawerEnhancedProps {
+  isScrolled?: boolean
+}
+
+export function CartDrawerEnhanced({ isScrolled = false }: CartDrawerEnhancedProps) {
   const { user, carrito, isAuthenticated, removeFromCart, updateCartItemQuantity, clearCart } = useUserAuth()
   const [isOpen, setIsOpen] = useState(false)
 
@@ -75,7 +79,11 @@ export function CartDrawerEnhanced() {
     <>
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
-        <Button variant="outline" size="sm" className="relative">
+        <Button variant="ghost" size="sm" className={`relative transition-colors ${
+          isScrolled 
+            ? 'text-gray-600 hover:text-gray-900 hover:bg-gray-50' 
+            : 'text-white hover:text-gray-200 hover:bg-white/10'
+        }`}>
           <ShoppingCart className="w-4 h-4" />
           <ClientOnly>
             {getTotalItems() > 0 && (

@@ -5,48 +5,21 @@ import Image from "next/image"
 import { FeaturedProducts } from "@/components/featured-products"
 import { useProductos } from "@/hooks/use-productos"
 import { Header } from "@/components/header"
+import { HeroCarousel } from "@/components/hero-carousel"
 import { ArrowRight } from "lucide-react"
 
-
-// Componente memoizado para el hero
-const HeroSection = memo(function HeroSection() {
-  return (
-  <section className="relative bg-gradient-to-br from-gray-50 via-white to-gray-100 py-12 md:py-20 overflow-hidden">
-    {/* Elementos decorativos */}
-    <div className="absolute inset-0 overflow-hidden">
-      <div className="absolute -top-20 md:-top-40 -right-20 md:-right-40 w-40 md:w-80 h-40 md:h-80 bg-gray-200 rounded-full opacity-20"></div>
-      <div className="absolute -bottom-20 md:-bottom-40 -left-20 md:-left-40 w-40 md:w-80 h-40 md:h-80 bg-gray-200 rounded-full opacity-20"></div>
-    </div>
-    
-    <div className="container mx-auto px-4 text-center relative z-10">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-4 md:mb-6 text-gray-900">
-          Excusas
-        </h1>
-        <p className="text-lg sm:text-xl md:text-2xl text-gray-600 mb-6 md:mb-8 max-w-2xl mx-auto leading-relaxed">
-          Jeans únicos con estilo urbano y calidad premium
-        </p>
-        
-        <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center items-center">
-          <a 
-            href="/catalogo" 
-            className="group bg-gray-900 text-white px-6 md:px-8 py-3 md:py-4 rounded-xl font-semibold hover:bg-gray-800 transition-all duration-300 transform hover:scale-105 hover:shadow-xl flex items-center gap-2 text-sm md:text-base w-full sm:w-auto justify-center"
-          >
-            Ver Catálogo
-            <ArrowRight className="w-4 h-4 md:w-5 md:h-5 group-hover:translate-x-1 transition-transform" />
-          </a>
-          <a 
-            href="/about" 
-            className="group border-2 border-gray-900 text-gray-900 px-6 md:px-8 py-3 md:py-4 rounded-xl font-semibold hover:bg-gray-900 hover:text-white transition-all duration-300 transform hover:scale-105 text-sm md:text-base w-full sm:w-auto text-center"
-          >
-            Conoce nuestra historia
-          </a>
-        </div>
-      </div>
-    </div>
-  </section>
-  )
-})
+// Imágenes del carrusel hero
+const heroImages = [
+  {
+    src: "/hero1.png",
+    alt: "Excusas Jeans - Colección Principal"
+  }
+  // Aquí puedes agregar más imágenes cuando las tengas
+  // {
+  //   src: "/hero2.png",
+  //   alt: "Excusas Jeans - Nueva Colección"
+  // }
+]
 
 // Componente memoizado para el footer
 const Footer = memo(function Footer() {
@@ -109,7 +82,8 @@ export default function HomePage() {
     <div className="min-h-screen bg-white">
       <Header />
 
-      <HeroSection />
+      {/* Carrusel Hero */}
+      <HeroCarousel images={heroImages} />
       
       {/* Contenido principal */}
       <main className="container mx-auto px-4 py-8 md:py-16">
