@@ -13,44 +13,6 @@ import { generateWhatsAppMessage, openWhatsApp } from "@/lib/utils"
 function HeaderContent() {
   const { user, isAuthenticated, logout } = useUserAuth()
 
-  const testWhatsAppModal = async () => {
-    console.log('testWhatsAppModal called')
-    console.log('User data:', { user, isAuthenticated })
-    
-    // Generar mensaje de prueba con información del cliente
-    const testItems = [
-      {
-        producto: { nombre: 'Jeans Azul', precio: 150 },
-        color: { nombre: 'Azul' },
-        talla: 'M',
-        cantidad: 1
-      }
-    ]
-    
-    // Usar información del perfil si está disponible
-    const customerInfo = isAuthenticated ? {
-      nombre: user?.nombre || '',
-      dni: user?.dni || '',
-      telefono: user?.telefono || '',
-      provincia: user?.provincia || '',
-      distrito: user?.distrito || '',
-      direccion: user?.direccion || '',
-      referencia: user?.referencia || '',
-      codigo_postal: user?.codigo_postal || '',
-      empresa_envio: user?.empresa_envio || '',
-      sede_envio: user?.sede_envio || ''
-    } : undefined
-    
-    console.log('Customer info:', customerInfo)
-    
-    const message = generateWhatsAppMessage(testItems, customerInfo)
-    const phoneNumber = '51934762253'
-    
-    console.log('About to call openWhatsApp with:', { phoneNumber, message })
-    
-    // Usar la función mejorada que copia al portapapeles en desktop
-    await openWhatsApp(phoneNumber, message)
-  }
 
   return (
     <>
@@ -123,18 +85,6 @@ function HeaderContent() {
                 )}
               </ClientOnly>
 
-              {/* Botón de prueba para WhatsApp Modal */}
-              <ClientOnly fallback={null}>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={testWhatsAppModal}
-                  className="ml-2 bg-green-600 text-white hover:bg-green-700 border-green-600"
-                  title="Probar Modal de WhatsApp"
-                >
-                  <MessageCircle className="w-4 h-4" />
-                </Button>
-              </ClientOnly>
 
               {/* User authentication */}
               <ClientOnly fallback={

@@ -11,13 +11,18 @@ import { ServiceWorkerRegister } from "@/components/service-worker-register"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "Catálogo Excusas Jeans - Moda y Estilo",
+  title: "Excusas Jeans",
   description: "Descubre nuestra colección de jeans y ropa moderna",
   generator: "v0.app",
   keywords: ["jeans", "moda", "ropa", "estilo", "Excusas Jeans"],
   authors: [{ name: "Excusas Jeans" }],
   creator: "Excusas Jeans",
   publisher: "Excusas Jeans",
+  icons: {
+    icon: '/logo-excusas.png',
+    shortcut: '/logo-excusas.png',
+    apple: '/logo-excusas.png',
+  },
   formatDetection: {
     email: false,
     address: false,
@@ -28,7 +33,7 @@ export const metadata: Metadata = {
     canonical: '/',
   },
   openGraph: {
-    title: "Excusas Jeans - Moda y Estilo",
+    title: "Excusas Jeans",
     description: "Descubre nuestra colección de jeans únicos con estilo urbano y calidad premium",
     url: 'https://excusas-jeans.vercel.app',
     siteName: 'Excusas Jeans',
@@ -45,7 +50,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: "Excusas Jeans - Moda y Estilo",
+    title: "Excusas Jeans",
     description: "Descubre nuestra colección de jeans únicos con estilo urbano y calidad premium",
     images: ['/logo-excusas.png'],
   },
