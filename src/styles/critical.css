@@ -1,0 +1,343 @@
+/* CSS crítico para above-the-fold content */
+/* Solo estilos esenciales para la carga inicial */
+
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.35 0 0);
+  --primary: oklch(0.45 0.15 160);
+  --radius: 0.5rem;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  background-color: var(--background);
+  color: var(--foreground);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Utilidades críticas */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.flex {
+  display: flex;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.font-bold {
+  font-weight: 700;
+}
+
+.text-gray-900 {
+  color: #111827;
+}
+
+.text-gray-600 {
+  color: #4b5563;
+}
+
+.bg-white {
+  background-color: #ffffff;
+}
+
+.bg-gray-900 {
+  background-color: #111827;
+}
+
+.text-white {
+  color: #ffffff;
+}
+
+/* Header crítico */
+.sticky {
+  position: sticky;
+}
+
+.top-0 {
+  top: 0;
+}
+
+.z-50 {
+  z-index: 50;
+}
+
+.w-full {
+  width: 100%;
+}
+
+.h-20 {
+  height: 5rem;
+}
+
+.backdrop-blur-md {
+  backdrop-filter: blur(12px);
+}
+
+.border-b {
+  border-bottom-width: 1px;
+}
+
+.border-gray-200 {
+  border-color: #e5e7eb;
+}
+
+/* Hero crítico */
+.py-20 {
+  padding-top: 5rem;
+  padding-bottom: 5rem;
+}
+
+.text-4xl {
+  font-size: 2.25rem;
+  line-height: 2.5rem;
+}
+
+.text-xl {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+}
+
+.mb-6 {
+  margin-bottom: 1.5rem;
+}
+
+.mb-8 {
+  margin-bottom: 2rem;
+}
+
+.max-w-4xl {
+  max-width: 56rem;
+}
+
+.max-w-2xl {
+  max-width: 42rem;
+}
+
+.mx-auto {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.px-4 {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+/* Responsive crítico */
+@media (min-width: 768px) {
+  .md\\:text-6xl {
+    font-size: 3.75rem;
+    line-height: 1;
+  }
+  
+  .md\\:text-2xl {
+    font-size: 1.5rem;
+    line-height: 2rem;
+  }
+  
+  .md\\:flex-row {
+    flex-direction: row;
+  }
+  
+  .md\\:items-center {
+    align-items: center;
+  }
+}
+
+@media (min-width: 640px) {
+  .sm\\:flex-row {
+    flex-direction: row;
+  }
+}
+
+/* Animaciones críticas */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.6s ease-out forwards;
+  opacity: 0;
+}
+
+.delay-200 {
+  animation-delay: 0.2s;
+}
+
+.delay-300 {
+  animation-delay: 0.3s;
+}
+
+.delay-400 {
+  animation-delay: 0.4s;
+}
+
+/* Transiciones críticas */
+.transition-all {
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+.duration-300 {
+  transition-duration: 300ms;
+}
+
+.hover\\:scale-105:hover {
+  transform: scale(1.05);
+}
+
+.hover\\:bg-gray-800:hover {
+  background-color: #1f2937;
+}
+
+.hover\\:text-white:hover {
+  color: #ffffff;
+}
+
+/* Botones críticos */
+.bg-gray-900 {
+  background-color: #111827;
+}
+
+.text-white {
+  color: #ffffff;
+}
+
+.px-8 {
+  padding-left: 2rem;
+  padding-right: 2rem;
+}
+
+.py-4 {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+.rounded-xl {
+  border-radius: 0.75rem;
+}
+
+.font-semibold {
+  font-weight: 600;
+}
+
+.border-2 {
+  border-width: 2px;
+}
+
+.border-gray-900 {
+  border-color: #111827;
+}
+
+.text-gray-900 {
+  color: #111827;
+}
+
+.hover\\:bg-gray-900:hover {
+  background-color: #111827;
+}
+
+.hover\\:text-white:hover {
+  color: #ffffff;
+}
+
+/* Gap crítico */
+.gap-4 {
+  gap: 1rem;
+}
+
+.gap-2 {
+  gap: 0.5rem;
+}
+
+.space-x-3 > * + * {
+  margin-left: 0.75rem;
+}
+
+/* Flexbox crítico */
+.flex-col {
+  flex-direction: column;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.items-center {
+  align-items: center;
+}
+
+/* Dimensiones críticas */
+.h-8 {
+  height: 2rem;
+}
+
+.w-8 {
+  width: 2rem;
+}
+
+.h-10 {
+  height: 2.5rem;
+}
+
+.w-10 {
+  width: 2.5rem;
+}
+
+.text-2xl {
+  font-size: 1.5rem;
+  line-height: 2rem;
+}
+
+/* Posicionamiento crítico */
+.relative {
+  position: relative;
+}
+
+.z-10 {
+  z-index: 10;
+}
+
+/* Overflow crítico */
+.overflow-hidden {
+  overflow: hidden;
+}
+
+/* Object fit crítico */
+.object-contain {
+  object-fit: contain;
+}
+
+/* Min height crítico */
+.min-h-screen {
+  min-height: 100vh;
+}
