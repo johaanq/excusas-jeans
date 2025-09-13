@@ -12,7 +12,7 @@ export default async function EditProductPage({ params }: EditPageProps) {
   return (
     <AdminGuard>
       <div className="min-h-screen bg-gray-50">
-        <div className="container mx-auto py-8">
+        <div className="container mx-auto pt-20 sm:pt-24 md:pt-28 pb-8">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900">Editar Producto</h1>
             <p className="text-gray-600 mt-2">Modifica la información del producto</p>

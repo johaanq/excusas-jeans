@@ -221,24 +221,24 @@ export default function PerfilPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 pt-20 sm:pt-24 md:pt-28 pb-4 sm:pb-6 md:pb-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           <Button
             variant="ghost"
             onClick={() => router.back()}
-            className="mb-4 flex items-center gap-2"
+            className="mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base"
           >
             <ArrowLeft className="w-4 h-4" />
             Volver
           </Button>
           
-          <div className="flex items-center gap-3">
-            <User className="w-8 h-8 text-gray-600" />
+          <div className="flex items-center gap-2 sm:gap-3">
+            <User className="w-6 h-6 sm:w-8 sm:h-8 text-gray-600" />
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Mi Perfil</h1>
-              <p className="text-gray-600">Actualiza tu información personal y dirección de envío</p>
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">Mi Perfil</h1>
+              <p className="text-sm sm:text-base text-gray-600">Actualiza tu información personal y dirección de envío</p>
             </div>
           </div>
         </div>
@@ -253,7 +253,7 @@ export default function PerfilPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
                   <Label htmlFor="nombre">Nombre Completo *</Label>
                   <Input

@@ -208,7 +208,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 pt-20 sm:pt-24 md:pt-28 pb-4 sm:pb-6 md:pb-8">
         <ProductDetail producto={producto} />
       </main>
     </div>

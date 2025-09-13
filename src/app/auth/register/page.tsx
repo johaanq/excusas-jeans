@@ -62,7 +62,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-8 md:py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center pt-20 sm:pt-24 md:pt-28 pb-8 md:pb-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-6 md:space-y-8">
         <div className="text-center">
           <div className="flex justify-center mb-3 md:mb-4">

@@ -10,10 +10,13 @@ import { ClientOnly } from "@/components/ui/client-only"
 import { useUserAuth } from "@/contexts/user-auth-context"
 import { generateWhatsAppMessage, openWhatsApp } from "@/lib/utils"
 import { useState, useEffect } from "react"
+import { usePathname } from "next/navigation"
 
 function HeaderContent() {
   const { user, isAuthenticated, logout } = useUserAuth()
   const [isScrolled, setIsScrolled] = useState(false)
+  const pathname = usePathname()
+  const isHomePage = pathname === '/'
 
   useEffect(() => {
     const handleScroll = () => {
@@ -21,9 +24,15 @@ function HeaderContent() {
       setIsScrolled(scrollTop > 50)
     }
 
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
+    // Solo agregar el listener de scroll si estamos en la página principal
+    if (isHomePage) {
+      window.addEventListener('scroll', handleScroll)
+      return () => window.removeEventListener('scroll', handleScroll)
+    } else {
+      // En otras páginas, siempre mostrar el header con fondo
+      setIsScrolled(true)
+    }
+  }, [isHomePage])
 
 
   return (
