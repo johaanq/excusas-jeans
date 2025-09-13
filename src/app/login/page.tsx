@@ -32,7 +32,7 @@ export default function LoginPage() {
             } else {
                 setError('Credenciales incorrectas')
             }
-        } catch (err) {
+        } catch {
             setError('Error al iniciar sesión')
         } finally {
             setIsLoading(false)
@@ -67,6 +67,7 @@ export default function LoginPage() {
                         </Label>
                         <div className="relative">
                             <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 z-10 pointer-events-none" />
+                 
                             <Input
                                 id="username"
                                 type="text"

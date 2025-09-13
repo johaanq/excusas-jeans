@@ -46,32 +46,41 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (isAuthenticated && carrito?.items) {
       // Convert Supabase cart items to local cart format
-      const convertedItems: CartItem[] = carrito.items.map((item: any) => ({
-        producto: {
-          id: item.producto.id,
-          nombre: item.producto.nombre,
-          slug: item.producto.slug,
-          descripcion: item.producto.descripcion || '',
-          precio: item.producto.precio,
-          precio_mayor: item.producto.precio_mayor,
-          estado: 'activo',
-          foto_principal: item.producto.foto_principal,
-          created_at: '',
-          colores: [],
-          tallas: [],
-          fotos_medidas: []
-        },
-        color: {
-          id: item.color.id,
-          producto_id: item.producto_id,
-          nombre: item.color.nombre,
-          hex: item.color.hex,
-          fotos: item.color.fotos || [],
-          created_at: ''
-        },
-        talla: item.talla,
-        cantidad: item.cantidad
-      }))
+      const convertedItems: CartItem[] = carrito.items
+        .filter(item => item.producto && item.color)
+        .map((item) => {
+          // Type guard to ensure producto and color exist
+          if (!item.producto || !item.color) {
+            throw new Error('Invalid cart item: missing producto or color')
+          }
+          
+          return {
+            producto: {
+              id: item.producto.id,
+              nombre: item.producto.nombre,
+              slug: item.producto.slug,
+              descripcion: '',
+              precio: item.producto.precio,
+              precio_mayor: item.producto.precio_mayor,
+              estado: 'activo',
+              foto_principal: '',
+              created_at: '',
+              colores: [],
+              tallas: [],
+              fotos_medidas: []
+            },
+            color: {
+              id: item.color.id,
+              producto_id: item.producto_id,
+              nombre: item.color.nombre,
+              hex: item.color.hex,
+              fotos: [],
+              created_at: ''
+            },
+            talla: item.talla,
+            cantidad: item.cantidad
+          }
+        })
       setItems(convertedItems)
     }
   }, [isAuthenticated, carrito])

@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, lazy, memo, ReactNode } from "react"
+import { Suspense, memo, ReactNode } from "react"
 import { useIntersectionObserver } from "@/hooks/use-intersection-observer"
 import { Skeleton } from "./skeleton"
 
@@ -12,7 +12,8 @@ interface LazySectionProps {
   className?: string
 }
 
-const DefaultFallback = memo(() => (
+const DefaultFallback = memo(function DefaultFallback() {
+  return (
   <div className="space-y-4">
     <Skeleton className="h-8 w-3/4 animate-shimmer" />
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -27,7 +28,8 @@ const DefaultFallback = memo(() => (
       ))}
     </div>
   </div>
-))
+  )
+})
 
 export function LazySection({ 
   children, 

@@ -2,7 +2,7 @@ import { notFound } from "next/navigation"
 import { Header } from "@/components/header"
 import { ProductDetail } from "@/components/product-detail"
 import { supabase } from "@/lib/supabase"
-import type { Producto } from "@/data/productos"
+import type { Producto, SupabaseColor, SupabaseFotoColor, SupabaseTalla, SupabaseFotoMedida } from "@/data/productos"
 
 interface ProductPageProps {
   params: Promise<{
@@ -70,12 +70,12 @@ async function getProductoBySlug(slug: string): Promise<Producto | null> {
       estado: productoData.estado,
       foto_principal: productoData.foto_principal || '',
       created_at: productoData.created_at,
-      colores: productoData.colores?.map((color: any) => ({
+      colores: productoData.colores?.map((color: SupabaseColor) => ({
         id: color.id,
         producto_id: color.producto_id,
         nombre: color.nombre,
         hex: color.hex,
-        fotos: color.fotos_color?.map((foto: any) => ({
+        fotos: color.fotos_color?.map((foto: SupabaseFotoColor) => ({
           id: foto.id,
           color_id: foto.color_id,
           url: foto.url,
@@ -83,14 +83,14 @@ async function getProductoBySlug(slug: string): Promise<Producto | null> {
         })) || [],
         created_at: color.created_at
       })) || [],
-      tallas: productoData.tallas?.map((talla: any) => ({
+      tallas: productoData.tallas?.map((talla: SupabaseTalla) => ({
         id: talla.id,
         producto_id: talla.producto_id,
         talla: talla.talla,
         en_stock: talla.en_stock,
         created_at: talla.created_at
       })) || [],
-      fotos_medidas: productoData.fotos_medidas?.map((foto: any) => ({
+      fotos_medidas: productoData.fotos_medidas?.map((foto: SupabaseFotoMedida) => ({
         id: foto.id,
         producto_id: foto.producto_id,
         url: foto.url,
@@ -162,12 +162,12 @@ async function getProductos(): Promise<Producto[]> {
       estado: producto.estado,
       foto_principal: producto.foto_principal || '',
       created_at: producto.created_at,
-      colores: producto.colores?.map((color: any) => ({
+      colores: producto.colores?.map((color: SupabaseColor) => ({
         id: color.id,
         producto_id: color.producto_id,
         nombre: color.nombre,
         hex: color.hex,
-        fotos: color.fotos_color?.map((foto: any) => ({
+        fotos: color.fotos_color?.map((foto: SupabaseFotoColor) => ({
           id: foto.id,
           color_id: foto.color_id,
           url: foto.url,
@@ -175,14 +175,14 @@ async function getProductos(): Promise<Producto[]> {
         })) || [],
         created_at: color.created_at
       })) || [],
-      tallas: producto.tallas?.map((talla: any) => ({
+      tallas: producto.tallas?.map((talla: SupabaseTalla) => ({
         id: talla.id,
         producto_id: talla.producto_id,
         talla: talla.talla,
         en_stock: talla.en_stock,
         created_at: talla.created_at
       })) || [],
-      fotos_medidas: producto.fotos_medidas?.map((foto: any) => ({
+      fotos_medidas: producto.fotos_medidas?.map((foto: SupabaseFotoMedida) => ({
         id: foto.id,
         producto_id: foto.producto_id,
         url: foto.url,

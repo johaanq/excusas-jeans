@@ -26,7 +26,7 @@ export function buildUniquePath(basePath: string, originalFileName: string): str
  * Sube un archivo a Supabase Storage con nombre único
  */
 export async function uploadFileWithUniqueName(
-  supabase: any,
+  supabase: { storage: { from: (bucket: string) => { upload: (path: string, file: File) => Promise<{ data: { path: string } | null; error: Error | null }>; getPublicUrl: (path: string) => { data: { publicUrl: string } } } } },
   bucket: string,
   file: File,
   basePath: string
@@ -40,6 +40,10 @@ export async function uploadFileWithUniqueName(
   if (error) {
     console.error('Error uploading file:', error)
     throw new Error(`Error al subir el archivo: ${error.message}`)
+  }
+
+  if (!data) {
+    throw new Error('No se recibieron datos del archivo subido')
   }
 
   const { data: { publicUrl } } = supabase.storage
@@ -71,7 +75,7 @@ export function extractStoragePath(url: string): string | null {
  * Elimina múltiples archivos del storage
  */
 export async function deleteFilesFromStorage(
-  supabase: any,
+  supabase: { storage: { from: (bucket: string) => { remove: (paths: string[]) => Promise<{ error: Error | null }> } } },
   bucket: string,
   filePaths: string[]
 ): Promise<void> {

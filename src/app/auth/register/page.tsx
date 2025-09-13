@@ -54,7 +54,7 @@ export default function RegisterPage() {
       } else {
         setError(result.error || 'Error al crear la cuenta')
       }
-    } catch (err) {
+    } catch {
       setError('Error inesperado al registrarse')
     } finally {
       setIsLoading(false)

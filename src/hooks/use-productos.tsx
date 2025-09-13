@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react"
 import { supabase } from "@/lib/supabase"
-import type { Producto } from "@/data/productos"
+import type { Producto, SupabaseColor, SupabaseFotoColor, SupabaseTalla, SupabaseFotoMedida } from "@/data/productos"
 
 interface UseProductosReturn {
   productos: Producto[]
@@ -63,12 +63,12 @@ export function useProductos(): UseProductosReturn {
         estado: producto.estado,
         foto_principal: producto.foto_principal,
         created_at: producto.created_at,
-        colores: producto.colores?.map((color: any) => ({
+        colores: producto.colores?.map((color: SupabaseColor) => ({
           id: color.id,
           producto_id: color.producto_id,
           nombre: color.nombre,
           hex: color.hex,
-          fotos: color.fotos_color?.map((foto: any) => ({
+          fotos: color.fotos_color?.map((foto: SupabaseFotoColor) => ({
             id: foto.id,
             color_id: foto.color_id,
             url: foto.url,
@@ -76,14 +76,14 @@ export function useProductos(): UseProductosReturn {
           })) || [],
           created_at: color.created_at
         })) || [],
-        tallas: producto.tallas?.map((talla: any) => ({
+        tallas: producto.tallas?.map((talla: SupabaseTalla) => ({
           id: talla.id,
           producto_id: talla.producto_id,
           talla: talla.talla,
           en_stock: talla.en_stock,
           created_at: talla.created_at
         })) || [],
-        fotos_medidas: producto.fotos_medidas?.map((foto: any) => ({
+        fotos_medidas: producto.fotos_medidas?.map((foto: SupabaseFotoMedida) => ({
           id: foto.id,
           producto_id: foto.producto_id,
           url: foto.url,

@@ -1,12 +1,10 @@
 "use client"
 
-import { memo, Suspense, lazy } from "react"
+import { memo, Suspense } from "react"
 import { ProductCard } from "./product-card"
 import { Skeleton } from "@/components/ui/skeleton"
 import type { Producto } from "@/data/productos"
 
-// Lazy load del ProductCard para mejor rendimiento
-const LazyProductCard = lazy(() => import("./product-card").then(module => ({ default: module.ProductCard })))
 
 interface FeaturedProductsProps {
   productos?: Producto[]
@@ -15,7 +13,8 @@ interface FeaturedProductsProps {
 }
 
 // Componente de loading mejorado con animaciones
-const LoadingSkeleton = memo(() => (
+const LoadingSkeleton = memo(function LoadingSkeleton() {
+  return (
   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
     {Array.from({ length: 4 }).map((_, i) => (
       <div 
@@ -37,10 +36,12 @@ const LoadingSkeleton = memo(() => (
       </div>
     ))}
   </div>
-))
+  )
+})
 
 // Componente de error mejorado
-const ErrorState = memo(({ error }: { error: string }) => (
+const ErrorState = memo(function ErrorState({ error }: { error: string }) {
+  return (
   <div className="text-center py-16 animate-fade-in-up">
     <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
       <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -56,10 +57,12 @@ const ErrorState = memo(({ error }: { error: string }) => (
       Intentar de nuevo
     </button>
   </div>
-))
+  )
+})
 
 // Componente de estado vacío mejorado
-const EmptyState = memo(() => (
+const EmptyState = memo(function EmptyState() {
+  return (
   <div className="text-center py-16 animate-fade-in-up">
     <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
       <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -75,7 +78,8 @@ const EmptyState = memo(() => (
       Ver catálogo completo
     </a>
   </div>
-))
+  )
+})
 
 export function FeaturedProducts({ productos, isLoading, error }: FeaturedProductsProps) {
   if (error) {

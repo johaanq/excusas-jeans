@@ -1,8 +1,8 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Usuario, LoginData, RegisterData, Carrito, CarritoItem } from '@/types/user'
+import { Usuario, LoginData, RegisterData, Carrito } from '@/types/user'
 
 interface UserAuthContextType {
   user: Usuario | null
@@ -28,11 +28,7 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
 
-  useEffect(() => {
-    checkAuth()
-  }, [])
-
-  const checkAuth = async () => {
+  const checkAuth = useCallback(async () => {
     try {
       // Verificar sesión activa con Supabase
       const { data: { user: supabaseUser }, error } = await supabase.auth.getUser()
@@ -64,12 +60,18 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    checkAuth()
+  }, [checkAuth])
 
   const loadCart = async (userId: string) => {
     try {
       // Obtener o crear carrito
-      let { data: carritoData, error: carritoError } = await supabase
+      let carritoData = null
+      
+      const { data: existingCarrito, error: carritoError } = await supabase
         .from('carritos')
         .select(`
           *,
@@ -100,6 +102,8 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
         if (newCarrito && !newCarritoError) {
           carritoData = newCarrito
         }
+      } else if (existingCarrito) {
+        carritoData = existingCarrito
       }
 
       if (carritoData) {
@@ -180,7 +184,7 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
       }
 
       return { success: false, error: 'Error al crear cuenta' }
-    } catch (error) {
+    } catch {
       return { success: false, error: 'Error inesperado al registrarse' }
     }
   }
@@ -301,8 +305,8 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
           console.error('Error refreshing user data:', userError)
         }
       }
-    } catch (error) {
-      console.error('Error refreshing user:', error)
+    } catch {
+      console.error('Error refreshing user')
     }
   }
 

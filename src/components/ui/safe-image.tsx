@@ -44,5 +44,5 @@ export function SafeImage({
     ...(sizes && { sizes })
   }
 
-  return <Image {...imageProps} />
+  return <Image {...imageProps} alt={alt} />
 }

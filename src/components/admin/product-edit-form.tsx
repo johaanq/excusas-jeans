@@ -1,13 +1,13 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { LoadingSpinner } from '@/components/ui/loading-spinner'
-import { X, Plus, Upload, Image as ImageIcon, LogOut, Home, ArrowLeft } from 'lucide-react'
+import { X, Plus, LogOut, ArrowLeft } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/auth-context'
 import { uploadFileWithUniqueName } from '@/lib/storage-utils'
@@ -25,10 +25,10 @@ interface ProductFormData {
 }
 
 interface ExistingData {
-  producto: any
-  colores: any[]
-  tallas: any[]
-  fotosMedidas: any[]
+  producto: { id: string; nombre: string; precio?: number; precio_mayor?: number; estado: string }
+  colores: { id: string; nombre: string; hex: string; fotos_color: { id: string; url: string }[] }[]
+  tallas: { id: string; talla: string; en_stock: boolean }[]
+  fotosMedidas: { id: string; url: string }[]
 }
 
 const TALLAS_DISPONIBLES = ['26', '28', '30', '32', '34']
@@ -53,12 +53,7 @@ export function ProductEditForm({ productId }: { productId: string }) {
   const [existingData, setExistingData] = useState<ExistingData | null>(null)
   const [existingImages, setExistingImages] = useState<string[]>([])
 
-  useEffect(() => {
-    setIsMounted(true)
-    loadProductData()
-  }, [productId])
-
-  const loadProductData = async () => {
+  const loadProductData = useCallback(async () => {
     try {
       // Cargar datos del producto
       const { data: producto, error: productoError } = await supabase
@@ -81,8 +76,8 @@ export function ProductEditForm({ productId }: { productId: string }) {
 
       // Cargar imágenes existentes
       const existingImages: string[] = []
-      producto.colores.forEach((color: any) => {
-        color.fotos_color.forEach((foto: any) => {
+      producto.colores.forEach((color: { fotos_color: { url: string }[] }) => {
+        color.fotos_color.forEach((foto: { url: string }) => {
           existingImages.push(foto.url)
         })
       })
@@ -95,8 +90,8 @@ export function ProductEditForm({ productId }: { productId: string }) {
         nombre: producto.nombre,
         precioUnitario: producto.precio?.toString() || '',
         precioMayor: producto.precio_mayor?.toString() || '',
-        tallas: producto.tallas.map((t: any) => t.talla),
-        colores: producto.colores.map((c: any) => c.nombre),
+        tallas: producto.tallas.map((t: { talla: string }) => t.talla),
+        colores: producto.colores.map((c: { nombre: string }) => c.nombre),
         fotosProducto: [],
         fotoMedidas: null,
         estado: producto.estado
@@ -108,7 +103,12 @@ export function ProductEditForm({ productId }: { productId: string }) {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [productId])
+
+  useEffect(() => {
+    setIsMounted(true)
+    loadProductData()
+  }, [productId, loadProductData])
 
   const handleTallaToggle = (talla: string) => {
     setFormData(prev => ({
@@ -177,7 +177,7 @@ export function ProductEditForm({ productId }: { productId: string }) {
       }
 
       // 2. Actualizar el producto
-      const updateData: any = {
+      const updateData: { nombre: string; precio: number | null; precio_mayor: number | null; estado: string; foto_principal?: string } = {
         nombre: formData.nombre,
         precio: parseFloat(formData.precioUnitario) || null,
         precio_mayor: parseFloat(formData.precioMayor) || null,

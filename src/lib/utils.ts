@@ -30,7 +30,7 @@ export function isMobileDevice(): boolean {
 }
 
 // Generar mensaje de WhatsApp con detalles del pedido
-export function generateWhatsAppMessage(items: any[], customerInfo?: {
+export function generateWhatsAppMessage(items: { producto?: { nombre?: string; precio?: number }; color?: { nombre?: string }; talla?: string; cantidad?: number }[], customerInfo?: {
   nombre?: string
   dni?: string
   telefono?: string
@@ -150,7 +150,7 @@ export function generateWhatsAppMessage(items: any[], customerInfo?: {
 }
 
 // Función mejorada para abrir WhatsApp
-export async function openWhatsApp(phoneNumber: string, message?: string, onShowModal?: (message: string, phoneNumber: string) => void) {
+export async function openWhatsApp(phoneNumber: string, message?: string) {
   console.log('openWhatsApp called with:', { phoneNumber, message })
   const cleanPhoneNumber = phoneNumber.replace(/\D/g, '') // Solo números
   const deviceType = getDeviceType()
@@ -249,7 +249,11 @@ export function copyToClipboard(text: string): Promise<void> {
     textArea.focus()
     textArea.select()
     return new Promise((resolve, reject) => {
-      document.execCommand('copy') ? resolve() : reject()
+      if (document.execCommand('copy')) {
+        resolve()
+      } else {
+        reject()
+      }
       textArea.remove()
     })
   }

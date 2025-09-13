@@ -1,9 +1,10 @@
 import { Header } from "@/components/header"
 import { Suspense, memo } from "react"
-import { ArrowRight, CheckCircle, Heart, Award, Users, Clock, Star } from "lucide-react"
+import { CheckCircle, Heart, Award, Users, Star } from "lucide-react"
 
 // Componente memoizado para el hero
-const HeroSection = memo(() => (
+const HeroSection = memo(function HeroSection() {
+  return (
   <section className="relative w-full py-8 flex items-center justify-center bg-gray-50">
     <div className="container mx-auto px-4 flex justify-center">
       <img 
@@ -13,7 +14,8 @@ const HeroSection = memo(() => (
       />
     </div>
   </section>
-))
+  )
+})
 
 export default function AboutPage() {
   return (

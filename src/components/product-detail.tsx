@@ -3,16 +3,14 @@
 import { useState, useMemo, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
 import { SafeImage } from "@/components/ui/safe-image"
 // Tabs removed for simplicity
 // Dialog removed for simplicity
-import { ArrowLeft, Heart, Share2, Ruler, MessageCircle, Plus, Minus, ShoppingCart } from "lucide-react"
+import { ArrowLeft, Share2, MessageCircle, Plus, Minus, ShoppingCart } from "lucide-react"
 import { type Producto } from "@/data/productos"
 import { type CartItem } from "@/hooks/use-cart"
 import { generateWhatsAppMessage, openWhatsApp } from "@/lib/utils"
 import { useCart } from "@/hooks/use-cart"
-import { useSupabaseProductos } from "@/hooks/use-supabase-productos"
 import { useUserAuth } from "@/contexts/user-auth-context"
 import { ClientOnly } from "@/components/ui/client-only"
 
@@ -24,7 +22,6 @@ function ProductDetailContent({ producto }: ProductDetailProps) {
   const [selectedColorIndex, setSelectedColorIndex] = useState(-1) // -1 = sin color seleccionado
   const [selectedTalla, setSelectedTalla] = useState<string>("")
   const [cantidad, setCantidad] = useState(1)
-  const [isLiked, setIsLiked] = useState(false)
   const [selectedImageIndex, setSelectedImageIndex] = useState(0) // Siempre empezar con la foto principal
 
   const { addItem } = useCart()
@@ -85,7 +82,6 @@ function ProductDetailContent({ producto }: ProductDetailProps) {
       setSelectedImageIndex(0)
     }
   }, [selectedColor, allImages, selectedColorIndex])
-  const sizeGuideImage = producto.fotos_medidas[0]?.url
 
   // Check if selected size is in stock
   const selectedTallaObj = producto.tallas.find((t) => t.talla === selectedTalla)

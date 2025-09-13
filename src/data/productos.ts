@@ -44,6 +44,53 @@ export interface FotoMedida {
   created_at: string
 }
 
+// Supabase raw data interfaces
+export interface SupabaseColor {
+  id: string
+  producto_id: string
+  nombre: string
+  hex: string
+  created_at: string
+  fotos_color: SupabaseFotoColor[]
+}
+
+export interface SupabaseFotoColor {
+  id: string
+  color_id: string
+  url: string
+  created_at: string
+}
+
+export interface SupabaseTalla {
+  id: string
+  producto_id: string
+  talla: string
+  en_stock: boolean
+  created_at: string
+}
+
+export interface SupabaseFotoMedida {
+  id: string
+  producto_id: string
+  url: string
+  created_at: string
+}
+
+export interface SupabaseProducto {
+  id: string
+  nombre: string
+  slug: string
+  descripcion: string | null
+  precio: number | null
+  precio_mayor: number | null
+  estado: string
+  created_at: string
+  foto_principal: string | null
+  colores: SupabaseColor[]
+  tallas: SupabaseTalla[]
+  fotos_medidas: SupabaseFotoMedida[]
+}
+
 // Datos de ejemplo para el catálogo
 export const productosEjemplo: Producto[] = [
   {

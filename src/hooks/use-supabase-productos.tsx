@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Producto, Color, Talla, FotoMedida, FotoColor } from '@/data/productos'
+import { Producto, SupabaseColor, SupabaseFotoColor, SupabaseTalla, SupabaseFotoMedida } from '@/data/productos'
 
 export function useSupabaseProductos() {
   const [productos, setProductos] = useState<Producto[]>([])
@@ -43,12 +43,12 @@ export function useSupabaseProductos() {
         estado: producto.estado,
         created_at: producto.created_at,
         foto_principal: producto.foto_principal,
-        colores: producto.colores?.map((color: any) => ({
+        colores: producto.colores?.map((color: SupabaseColor) => ({
           id: color.id,
           producto_id: color.producto_id,
           nombre: color.nombre,
           hex: color.hex,
-          fotos: color.fotos_color?.map((foto: any) => ({
+          fotos: color.fotos_color?.map((foto: SupabaseFotoColor) => ({
             id: foto.id,
             color_id: foto.color_id,
             url: foto.url,
@@ -56,14 +56,14 @@ export function useSupabaseProductos() {
           })) || [],
           created_at: color.created_at
         })) || [],
-        tallas: producto.tallas?.map((talla: any) => ({
+        tallas: producto.tallas?.map((talla: SupabaseTalla) => ({
           id: talla.id,
           producto_id: talla.producto_id,
           talla: talla.talla,
           en_stock: talla.en_stock,
           created_at: talla.created_at
         })) || [],
-        fotos_medidas: producto.fotos_medidas?.map((foto: any) => ({
+        fotos_medidas: producto.fotos_medidas?.map((foto: SupabaseFotoMedida) => ({
           id: foto.id,
           producto_id: foto.producto_id,
           url: foto.url,
@@ -112,12 +112,12 @@ export function useSupabaseProductos() {
         estado: productoData.estado,
         created_at: productoData.created_at,
         foto_principal: productoData.foto_principal,
-        colores: productoData.colores?.map((color: any) => ({
+        colores: productoData.colores?.map((color: SupabaseColor) => ({
           id: color.id,
           producto_id: color.producto_id,
           nombre: color.nombre,
           hex: color.hex,
-          fotos: color.fotos_color?.map((foto: any) => ({
+          fotos: color.fotos_color?.map((foto: SupabaseFotoColor) => ({
             id: foto.id,
             color_id: foto.color_id,
             url: foto.url,
@@ -125,14 +125,14 @@ export function useSupabaseProductos() {
           })) || [],
           created_at: color.created_at
         })) || [],
-        tallas: productoData.tallas?.map((talla: any) => ({
+        tallas: productoData.tallas?.map((talla: SupabaseTalla) => ({
           id: talla.id,
           producto_id: talla.producto_id,
           talla: talla.talla,
           en_stock: talla.en_stock,
           created_at: talla.created_at
         })) || [],
-        fotos_medidas: productoData.fotos_medidas?.map((foto: any) => ({
+        fotos_medidas: productoData.fotos_medidas?.map((foto: SupabaseFotoMedida) => ({
           id: foto.id,
           producto_id: foto.producto_id,
           url: foto.url,

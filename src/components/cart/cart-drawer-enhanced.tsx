@@ -151,15 +151,11 @@ export function CartDrawerEnhanced() {
                         itemId: item.id,
                         producto: {
                           id: item.producto?.id,
-                          nombre: item.producto?.nombre,
-                          foto_principal: item.producto?.foto_principal,
-                          has_foto_principal: !!item.producto?.foto_principal
+                          nombre: item.producto?.nombre
                         },
                         color: {
                           id: item.color?.id,
-                          nombre: item.color?.nombre,
-                          fotos: item.color?.fotos,
-                          fotos_count: item.color?.fotos?.length
+                          nombre: item.color?.nombre
                         },
                         talla: item.talla,
                         cantidad: item.cantidad

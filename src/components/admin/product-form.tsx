@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { X, Plus, Upload, Image as ImageIcon, LogOut, Home } from 'lucide-react'
+import { X, Plus, LogOut, Home } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/auth-context'
 import { uploadFileWithUniqueName } from '@/lib/storage-utils'
@@ -506,9 +506,9 @@ export function ProductForm() {
                         className="mt-1"
                       />
                       
-                      {coloresConFotos.find(c => c.nombre === color)?.fotos.length > 0 && (
+                      {coloresConFotos.find(c => c.nombre === color)?.fotos && coloresConFotos.find(c => c.nombre === color)!.fotos.length > 0 && (
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2">
-                          {coloresConFotos.find(c => c.nombre === color)?.fotos.map((file, fileIndex) => (
+                          {coloresConFotos.find(c => c.nombre === color)?.fotos?.map((file, fileIndex) => (
                             <div key={fileIndex} className="relative">
                               <img
                                 src={URL.createObjectURL(file)}

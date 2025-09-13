@@ -2,12 +2,13 @@ import { ProductEditForm } from '@/components/admin/product-edit-form'
 import { AdminGuard } from '@/components/auth/admin-guard'
 
 interface EditPageProps {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
-export default function EditProductPage({ params }: EditPageProps) {
+export default async function EditProductPage({ params }: EditPageProps) {
+  const { id } = await params
   return (
     <AdminGuard>
       <div className="min-h-screen bg-gray-50">
@@ -17,7 +18,7 @@ export default function EditProductPage({ params }: EditPageProps) {
             <p className="text-gray-600 mt-2">Modifica la información del producto</p>
           </div>
           
-          <ProductEditForm productId={params.id} />
+          <ProductEditForm productId={id} />
         </div>
       </div>
     </AdminGuard>

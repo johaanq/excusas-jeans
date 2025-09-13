@@ -1,17 +1,16 @@
 "use client"
 
-import { lazy, memo } from "react"
+import { memo } from "react"
 import Image from "next/image"
 import { FeaturedProducts } from "@/components/featured-products"
 import { useProductos } from "@/hooks/use-productos"
 import { Header } from "@/components/header"
-import { ArrowRight, Sparkles, Star, Users, Award } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 
-// Lazy load del header para mejor rendimiento
-const LazyHeader = lazy(() => import("@/components/header").then(module => ({ default: module.Header })))
 
 // Componente memoizado para el hero
-const HeroSection = memo(() => (
+const HeroSection = memo(function HeroSection() {
+  return (
   <section className="relative bg-gradient-to-br from-gray-50 via-white to-gray-100 py-20 overflow-hidden">
     {/* Elementos decorativos */}
     <div className="absolute inset-0 overflow-hidden">
@@ -46,10 +45,12 @@ const HeroSection = memo(() => (
       </div>
     </div>
   </section>
-))
+  )
+})
 
 // Componente memoizado para el footer
-const Footer = memo(() => (
+const Footer = memo(function Footer() {
+  return (
   <footer className="bg-gray-900 text-white mt-20">
     <div className="container mx-auto px-4 py-12">
       <div className="flex flex-col md:flex-row justify-between items-center">
@@ -98,7 +99,8 @@ const Footer = memo(() => (
       </div>
     </div>
   </footer>
-))
+  )
+})
 
 export default function HomePage() {
   const { featuredProducts, isLoading, error } = useProductos()

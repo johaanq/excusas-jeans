@@ -202,7 +202,7 @@ export default function PerfilPage() {
         // Actualizar los datos del usuario en el contexto
         await refreshUser()
       }
-    } catch (err) {
+    } catch {
       setError('Error inesperado al actualizar el perfil')
     } finally {
       setIsSaving(false)
