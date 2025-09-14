@@ -4,6 +4,8 @@ const nextConfig: NextConfig = {
   // Optimizaciones de rendimiento
   experimental: {
     optimizePackageImports: ['lucide-react', '@radix-ui/react-dialog', '@radix-ui/react-label', '@radix-ui/react-slot'],
+    // Deshabilitar optimizaciones problemáticas de Supabase
+    serverComponentsExternalPackages: ['@supabase/supabase-js'],
   },
   
   // Turbopack configuration - moved from experimental.turbo
@@ -13,6 +15,10 @@ const nextConfig: NextConfig = {
         loaders: ['@svgr/webpack'],
         as: '*.js',
       },
+    },
+    // Excluir módulos problemáticos de Supabase
+    resolveAlias: {
+      '@supabase/supabase-js': '@supabase/supabase-js/dist/main/index.js',
     },
   },
   
