@@ -69,18 +69,19 @@ export default function HomePage() {
       <Header />
 
       {/* Hero Image */}
-      <section className="relative w-full h-[40vh] sm:h-[50vh] md:h-[60vh] lg:h-[70vh] xl:h-[80vh] overflow-hidden bg-gray-200">
-        <div className="relative w-full h-full">
+      <section className="relative w-full bg-gray-200">
+        <div className="relative w-full">
           <Image
             src="/hero1.png"
             alt="Excusas Jeans - Colección Principal"
-            fill
-            className="object-cover object-center"
+            width={1200}
+            height={800}
+            className="w-full h-auto object-contain"
             priority
             sizes="(max-width: 640px) 100vw, (max-width: 768px) 100vw, (max-width: 1024px) 100vw, (max-width: 1280px) 100vw, 100vw"
           />
           {/* Overlay sutil para mejor contraste */}
-          <div className="absolute inset-0 bg-black/10"></div>
+          <div className="absolute inset-0 bg-black/5"></div>
         </div>
       </section>
       

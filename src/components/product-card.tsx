@@ -41,9 +41,9 @@ export const ProductCard = memo(function ProductCard({ producto }: ProductCardPr
   }, [])
 
   return (
-    <Card className="group overflow-hidden border-border hover:shadow-xl transition-all duration-500 hover:-translate-y-2 bg-white">
-      <CardContent className="p-0">
-        <div className="relative aspect-square overflow-hidden bg-gray-100">
+    <Card className="group overflow-hidden border-border hover:shadow-xl transition-all duration-500 hover:-translate-y-2 bg-white h-full flex flex-col">
+      <CardContent className="p-0 flex flex-col h-full">
+        <div className="relative aspect-square overflow-hidden bg-gray-100 flex-shrink-0">
           <Link href={`/producto/${producto.slug}`} className="block h-full">
             <div className="relative w-full h-full">
               {!imageLoaded && !imageError && (
@@ -85,43 +85,45 @@ export const ProductCard = memo(function ProductCard({ producto }: ProductCardPr
           </div>
         </div>
 
-        <div className="p-4 space-y-3">
-          <div>
+        <div className="p-2 sm:p-4 space-y-2 sm:space-y-3 flex flex-col flex-grow">
+          <div className="flex-grow">
             <Link href={`/producto/${producto.slug}`}>
-              <h3 className="font-semibold text-foreground hover:text-primary transition-colors line-clamp-2 group-hover:underline">
+              <h3 className="font-semibold text-foreground hover:text-primary transition-colors line-clamp-2 group-hover:underline text-xs sm:text-sm md:text-base h-8 sm:h-10 md:h-12 flex items-center">
                 {producto.nombre}
               </h3>
             </Link>
-            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{producto.descripcion}</p>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1 line-clamp-2 hidden sm:block h-8 sm:h-10">{producto.descripcion}</p>
           </div>
 
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-shrink-0">
             {producto.precio && (
-              <span className="text-lg font-bold text-primary">
+              <span className="text-sm sm:text-lg font-bold text-primary">
                 S/{producto.precio.toFixed(2)}
               </span>
             )}
             {producto.precio_mayor && producto.precio_mayor !== producto.precio && (
-              <span className="text-sm text-muted-foreground line-through">
+              <span className="text-xs sm:text-sm text-muted-foreground line-through">
                 S/{producto.precio_mayor.toFixed(2)}
               </span>
             )}
           </div>
 
           <Button 
-            className="w-full group/btn transition-all duration-300 hover:scale-105" 
+            className="w-full group/btn transition-all duration-300 hover:scale-105 text-xs sm:text-sm h-8 sm:h-10 flex-shrink-0" 
             disabled={!hasStock} 
             asChild={hasStock}
           >
             {hasStock ? (
               <Link href={`/producto/${producto.slug}`}>
-                <ShoppingCart className="w-4 h-4 mr-2 group-hover/btn:animate-pulse" />
-                Ver Producto
+                <ShoppingCart className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 group-hover/btn:animate-pulse" />
+                <span className="hidden sm:inline">Ver Producto</span>
+                <span className="sm:hidden">Ver</span>
               </Link>
             ) : (
               <>
-                <ShoppingCart className="w-4 h-4 mr-2" />
-                Sin Stock
+                <ShoppingCart className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Sin Stock</span>
+                <span className="sm:hidden">Sin Stock</span>
               </>
             )}
           </Button>

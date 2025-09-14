@@ -157,9 +157,9 @@ function ProductDetailContent({ producto }: ProductDetailProps) {
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-12">
         {/* Product Images */}
-        <div className="space-y-4">
+        <div className="space-y-3 lg:space-y-4">
           {/* Imagen principal grande */}
           <div className="aspect-square relative overflow-hidden rounded-lg border border-border">
             {/* Usar imagen normal para debug */}
@@ -172,7 +172,7 @@ function ProductDetailContent({ producto }: ProductDetailProps) {
             
             {/* Indicador de imagen actual */}
             {allImages.length > 1 && (
-              <div className="absolute top-3 right-3 bg-background/80 backdrop-blur-sm px-2 py-1 rounded text-sm">
+              <div className="absolute top-2 right-2 lg:top-3 lg:right-3 bg-background/80 backdrop-blur-sm px-2 py-1 rounded text-xs lg:text-sm">
                 {selectedImageIndex + 1} / {allImages.length}
               </div>
             )}
@@ -181,12 +181,12 @@ function ProductDetailContent({ producto }: ProductDetailProps) {
 
           {/* Thumbnails de todas las imágenes */}
           {allImages.length > 1 && (
-            <div className="space-y-3">
+            <div className="space-y-2 lg:space-y-3">
               <div className="flex gap-2 overflow-x-auto pb-2">
                 {allImages.map((image, index) => (
                   <button
                     key={`${image.colorId || 'principal'}-${index}`}
-                    className={`relative aspect-square w-20 h-20 rounded-lg border overflow-hidden flex-shrink-0 transition-all ${
+                    className={`relative aspect-square w-16 h-16 lg:w-20 lg:h-20 rounded-lg border overflow-hidden flex-shrink-0 transition-all ${
                       selectedImageIndex === index
                         ? "border-primary scale-105" 
                         : "border-border hover:border-primary"
@@ -227,16 +227,16 @@ function ProductDetailContent({ producto }: ProductDetailProps) {
         </div>
 
         {/* Product Info */}
-        <div className="space-y-6">
+        <div className="space-y-4 lg:space-y-6">
           <div>
-            <h1 className="text-3xl font-bold text-foreground mb-2">{producto.nombre}</h1>
-            <p className="text-lg text-muted-foreground">{producto.descripcion}</p>
+            <h1 className="text-2xl lg:text-3xl font-bold text-foreground mb-2">{producto.nombre}</h1>
+            <p className="text-base lg:text-lg text-muted-foreground">{producto.descripcion}</p>
           </div>
 
           {/* Precio dinámico */}
           <div className="space-y-2">
             {producto.precio && (
-              <div className="text-3xl font-bold text-primary">
+              <div className="text-2xl lg:text-3xl font-bold text-primary">
                 S/{cantidad >= 4 && producto.precio_mayor ? producto.precio_mayor.toFixed(2) : producto.precio.toFixed(2)}
               </div>
             )}
@@ -280,12 +280,12 @@ function ProductDetailContent({ producto }: ProductDetailProps) {
           <div className="space-y-3">
             <h3 className="font-semibold text-foreground">Talla</h3>
 
-            <div className="grid grid-cols-5 gap-2">
+            <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
               {producto.tallas.map((talla) => (
                 <Button
                   key={talla.id}
                   variant={selectedTalla === talla.talla ? "default" : "outline"}
-                  className={`${!talla.en_stock ? "opacity-50 cursor-not-allowed" : ""}`}
+                  className={`text-sm ${!talla.en_stock ? "opacity-50 cursor-not-allowed" : ""}`}
                   disabled={!talla.en_stock}
                   onClick={() => setSelectedTalla(talla.talla)}
                 >
@@ -318,10 +318,10 @@ function ProductDetailContent({ producto }: ProductDetailProps) {
 
           {/* Action Buttons */}
           <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Button className="flex-1" size="lg" onClick={handleAddToCart} disabled={!selectedTalla || !isInStock || !selectedColor}>
-                <ShoppingCart className="w-5 h-5 mr-2" />
-                Agregar al Carrito
+                <ShoppingCart className="w-4 h-4 lg:w-5 lg:h-5 mr-2" />
+                <span className="text-sm lg:text-base">Agregar al Carrito</span>
               </Button>
 
               <Button
@@ -331,8 +331,8 @@ function ProductDetailContent({ producto }: ProductDetailProps) {
                 onClick={handleWhatsAppOrder}
                 disabled={!selectedTalla || !isInStock || !selectedColor}
               >
-                <MessageCircle className="w-5 h-5 mr-2" />
-                WhatsApp
+                <MessageCircle className="w-4 h-4 lg:w-5 lg:h-5 mr-2" />
+                <span className="text-sm lg:text-base">WhatsApp</span>
               </Button>
             </div>
 
@@ -361,9 +361,9 @@ function ProductDetailContent({ producto }: ProductDetailProps) {
           )}
 
           {/* Puntos Importantes */}
-          <div className="p-4 rounded-lg bg-red-50 border border-red-200">
-            <h3 className="font-semibold mb-4 text-red-600">⚠️ PUNTOS IMPORTANTES</h3>
-            <div className="space-y-3 text-muted-foreground">
+          <div className="p-3 lg:p-4 rounded-lg bg-red-50 border border-red-200">
+            <h3 className="font-semibold mb-3 lg:mb-4 text-red-600 text-sm lg:text-base">⚠️ PUNTOS IMPORTANTES</h3>
+            <div className="space-y-2 lg:space-y-3 text-muted-foreground text-xs lg:text-sm">
               <div className="flex items-start gap-2">
                 <span className="text-red-500 font-bold">•</span>
                 <p><strong>EL PRECIO POR MAYOR ES A PARTIR DE 4 UNIDADES DE UN SOLO MODELO</strong> (SE COMBINA TALLAS Y COLORES).</p>

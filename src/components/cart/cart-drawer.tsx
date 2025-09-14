@@ -64,7 +64,7 @@ export function CartDrawer({ isScrolled = false }: CartDrawerProps) {
 
       <SheetContent className="w-full sm:max-w-lg">
         <SheetHeader>
-          <SheetTitle>Carrito de Compras</SheetTitle>
+          <SheetTitle className="text-lg sm:text-xl">Carrito de Compras</SheetTitle>
         </SheetHeader>
 
         <div className="flex flex-col h-full">
@@ -77,39 +77,39 @@ export function CartDrawer({ isScrolled = false }: CartDrawerProps) {
             </div>
           ) : (
             <>
-              <div className="flex-1 overflow-y-auto py-4 space-y-4">
+              <div className="flex-1 overflow-y-auto py-4 space-y-3 sm:space-y-4">
                 {items.map((item) => (
                   <div
                     key={`${item.producto.id}-${item.color.id}-${item.talla}`}
-                    className="flex gap-4 p-4 border border-border rounded-lg"
+                    className="flex gap-3 sm:gap-4 p-3 sm:p-4 border border-border rounded-lg"
                   >
-                    <div className="w-20 h-20 relative rounded-lg bg-gray-100 flex items-center justify-center">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 relative rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
                       <Image
                         src="/carritoIMG.png"
                         alt="Producto en carrito"
-                        width={48}
-                        height={48}
-                        className="object-contain"
+                        width={40}
+                        height={40}
+                        className="object-contain sm:w-12 sm:h-12"
                       />
                     </div>
 
-                    <div className="flex-1 space-y-2">
+                    <div className="flex-1 space-y-2 min-w-0">
                       <div>
-                        <h4 className="font-medium line-clamp-1">{item.producto.nombre}</h4>
-                        <p className="text-sm text-muted-foreground">
+                        <h4 className="font-medium line-clamp-1 text-sm sm:text-base">{item.producto.nombre}</h4>
+                        <p className="text-xs sm:text-sm text-muted-foreground">
                           {item.color.nombre} - Talla {item.talla}
                         </p>
                         {item.producto.precio && (
-                          <p className="text-sm font-medium">S/{item.producto.precio.toFixed(2)}</p>
+                          <p className="text-xs sm:text-sm font-medium">S/{item.producto.precio.toFixed(2)}</p>
                         )}
                       </div>
 
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1 sm:gap-2">
                           <Button
                             variant="outline"
                             size="icon"
-                            className="h-8 w-8 bg-transparent"
+                            className="h-6 w-6 sm:h-8 sm:w-8 bg-transparent"
                             onClick={() =>
                               updateQuantity(item.producto.id, item.color.id, item.talla, item.cantidad - 1)
                             }
@@ -117,12 +117,12 @@ export function CartDrawer({ isScrolled = false }: CartDrawerProps) {
                             <Minus className="w-3 h-3" />
                           </Button>
 
-                          <span className="w-8 text-center text-sm font-medium">{item.cantidad}</span>
+                          <span className="w-6 sm:w-8 text-center text-xs sm:text-sm font-medium">{item.cantidad}</span>
 
                           <Button
                             variant="outline"
                             size="icon"
-                            className="h-8 w-8 bg-transparent"
+                            className="h-6 w-6 sm:h-8 sm:w-8 bg-transparent"
                             onClick={() =>
                               updateQuantity(item.producto.id, item.color.id, item.talla, item.cantidad + 1)
                             }
@@ -134,7 +134,7 @@ export function CartDrawer({ isScrolled = false }: CartDrawerProps) {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 text-destructive"
+                          className="h-6 w-6 sm:h-8 sm:w-8 text-destructive"
                           onClick={() => removeItem(item.producto.id, item.color.id, item.talla)}
                         >
                           <Trash2 className="w-3 h-3" />
@@ -145,15 +145,15 @@ export function CartDrawer({ isScrolled = false }: CartDrawerProps) {
                 ))}
               </div>
 
-              <div className="border-t pt-4 space-y-4">
+              <div className="border-t pt-3 sm:pt-4 space-y-3 sm:space-y-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-lg font-semibold">Total:</span>
-                  <span className="text-lg font-bold text-primary">S/{getTotalPrice().toFixed(2)}</span>
+                  <span className="text-base sm:text-lg font-semibold">Total:</span>
+                  <span className="text-base sm:text-lg font-bold text-primary">S/{getTotalPrice().toFixed(2)}</span>
                 </div>
 
                 <Button onClick={handleWhatsAppOrder} className="w-full bg-green-500 hover:bg-green-600" size="lg">
-                  <MessageCircle className="w-5 h-5 mr-2" />
-                  Pedir por WhatsApp
+                  <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+                  <span className="text-sm sm:text-base">Pedir por WhatsApp</span>
                 </Button>
               </div>
             </>

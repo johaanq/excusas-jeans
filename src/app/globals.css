@@ -126,6 +126,21 @@
 }
 
 @layer utilities {
+  /* Mejoras para móvil */
+  .line-clamp-1 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+  }
+
+  .line-clamp-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
   /* Animaciones personalizadas */
   @keyframes fade-in-up {
     from {

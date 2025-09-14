@@ -33,26 +33,26 @@ export default function AboutPage() {
         <div className="max-w-4xl mx-auto">
           {/* Historia */}
           <section className="mb-8 sm:mb-12 md:mb-16">
-            <div className="grid md:grid-cols-2 gap-6 sm:gap-8 md:gap-12 items-center">
-              <div className="animate-fade-in-left order-2 md:order-1">
-                <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-3 sm:mb-4 md:mb-6">Nuestra Historia</h2>
-                <div className="space-y-3 sm:space-y-4">
-                  <p className="text-gray-600 leading-relaxed text-sm sm:text-base">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 md:gap-8 lg:gap-12 items-center">
+              <div className="animate-fade-in-left">
+                <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-gray-900 mb-2 sm:mb-3 md:mb-4 lg:mb-6">Nuestra Historia</h2>
+                <div className="space-y-2 sm:space-y-3 md:space-y-4">
+                  <p className="text-gray-600 leading-relaxed text-xs sm:text-sm md:text-base">
                     Excusas Jeans nació de la pasión por crear jeans únicos que reflejen la personalidad de cada persona. 
                     Cada pieza está diseñada con amor y atención al detalle, combinando estilo urbano con comodidad.
                   </p>
-                  <p className="text-gray-600 leading-relaxed text-sm sm:text-base">
+                  <p className="text-gray-600 leading-relaxed text-xs sm:text-sm md:text-base">
                     Creemos que la moda debe ser accesible, sostenible y que te haga sentir increíble. 
                     Por eso trabajamos directamente con nuestros clientes a través de WhatsApp para ofrecer 
                     un servicio personalizado y cercano.
                   </p>
-                  <p className="text-gray-600 leading-relaxed text-sm sm:text-base">
+                  <p className="text-gray-600 leading-relaxed text-xs sm:text-sm md:text-base">
                     Desde nuestros inicios, nos hemos enfocado en crear productos de calidad que no solo se vean bien, 
                     sino que también reflejen nuestros valores de sostenibilidad y autenticidad.
                   </p>
                 </div>
               </div>
-              <div className="animate-fade-in-right order-1 md:order-2">
+              <div className="animate-fade-in-right">
                 <div className="rounded-lg overflow-hidden shadow-lg">
                   <img 
                     src="/nuestrahistoria-excusas.png" 
@@ -67,7 +67,7 @@ export default function AboutPage() {
           {/* Valores */}
           <section className="mb-8 sm:mb-12 md:mb-16">
             <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-4 sm:mb-6 md:mb-8 text-center animate-fade-in-up">Nuestros Valores</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
+            <div className="grid grid-cols-3 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 md:gap-6 lg:gap-8">
               {[
                 {
                   icon: CheckCircle,
@@ -90,11 +90,11 @@ export default function AboutPage() {
                   className="text-center animate-fade-in-up"
                   style={{ animationDelay: `${index * 200}ms` }}
                 >
-                  <div className="w-12 h-12 md:w-16 md:h-16 bg-gray-900 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
-                    <value.icon className="w-6 h-6 md:w-8 md:h-8 text-white" />
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 lg:w-16 lg:h-16 bg-gray-900 rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-3 md:mb-4">
+                    <value.icon className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-8 lg:h-8 text-white" />
                   </div>
-                  <h3 className="text-lg md:text-xl font-semibold text-gray-900 mb-2">{value.title}</h3>
-                  <p className="text-gray-600 text-sm md:text-base">
+                  <h3 className="text-xs sm:text-sm md:text-lg lg:text-xl font-semibold text-gray-900 mb-1 sm:mb-2">{value.title}</h3>
+                  <p className="text-gray-600 text-xs sm:text-sm md:text-base leading-tight sm:leading-normal">
                     {value.description}
                   </p>
                 </div>
@@ -107,7 +107,7 @@ export default function AboutPage() {
             <h2 className="text-base sm:text-lg md:text-2xl font-bold text-gray-900 mb-4 sm:mb-6 md:mb-8 text-center animate-fade-in-up">
               ¿Por qué somos tu mejor opción en cuanto a jeans?
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
+            <div className="grid grid-cols-3 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 md:gap-6 lg:gap-8">
               {[
                 {
                   icon: Star,
@@ -128,18 +128,18 @@ export default function AboutPage() {
               ].map((item, index) => (
                 <div 
                   key={index}
-                  className="text-center p-4 md:p-6 bg-gray-50 rounded-xl animate-fade-in-up"
+                  className="text-center p-2 sm:p-3 md:p-4 lg:p-6 bg-gray-50 rounded-xl animate-fade-in-up"
                   style={{ animationDelay: `${index * 200}ms` }}
                 >
-                  <div className="w-12 h-12 md:w-16 md:h-16 bg-gray-900 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 lg:w-16 lg:h-16 bg-gray-900 rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-3 md:mb-4">
                     {item.number ? (
-                      <span className="text-white font-bold text-lg md:text-xl">{item.number}</span>
+                      <span className="text-white font-bold text-sm sm:text-base md:text-lg lg:text-xl">{item.number}</span>
                     ) : (
-                      <item.icon className="w-6 h-6 md:w-8 md:h-8 text-white" />
+                      <item.icon className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-8 lg:h-8 text-white" />
                     )}
                   </div>
-                  <h3 className="text-lg md:text-xl font-semibold text-gray-900 mb-2 md:mb-3">{item.title}</h3>
-                  <p className="text-gray-600 leading-relaxed text-sm md:text-base">
+                  <h3 className="text-xs sm:text-sm md:text-lg lg:text-xl font-semibold text-gray-900 mb-1 sm:mb-2 md:mb-3">{item.title}</h3>
+                  <p className="text-gray-600 leading-tight sm:leading-relaxed text-xs sm:text-sm md:text-base">
                     {item.description}
                   </p>
                 </div>

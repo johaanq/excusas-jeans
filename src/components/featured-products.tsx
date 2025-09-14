@@ -15,7 +15,7 @@ interface FeaturedProductsProps {
 // Componente de loading mejorado con animaciones
 const LoadingSkeleton = memo(function LoadingSkeleton() {
   return (
-  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+  <div className="grid grid-cols-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
     {Array.from({ length: 4 }).map((_, i) => (
       <div 
         key={i} 
@@ -95,7 +95,7 @@ export function FeaturedProducts({ productos, isLoading, error }: FeaturedProduc
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
       {productos.map((producto, index) => (
         <div
           key={producto.id}
