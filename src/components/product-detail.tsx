@@ -160,7 +160,7 @@ function ProductDetailContent({ producto }: ProductDetailProps) {
         {/* Product Images */}
         <div className="space-y-3 lg:space-y-4">
           {/* Imagen principal grande */}
-          <div className="aspect-square relative overflow-hidden rounded-lg border border-border">
+          <div className="relative overflow-hidden rounded-lg border border-border" style={{ aspectRatio: '4/5' }}>
             {/* Usar imagen normal para debug */}
             <img
               key={`main-image-${selectedImageIndex}-${mainImage}`}

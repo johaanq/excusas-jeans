@@ -31,7 +31,7 @@ export function ProductGrid({ productos, isLoading, error }: ProductGridProps) {
         {Array.from({ length: 8 }).map((_, i) => (
           <Card key={i} className="overflow-hidden">
             <CardContent className="p-0">
-              <Skeleton className="aspect-square w-full" />
+              <Skeleton className="w-full" style={{ aspectRatio: '4/5' }} />
               <div className="p-2 sm:p-4 space-y-2 sm:space-y-3">
                 <Skeleton className="h-3 sm:h-4 w-3/4" />
                 <Skeleton className="h-2 sm:h-3 w-full" />

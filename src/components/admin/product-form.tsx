@@ -10,6 +10,7 @@ import { X, Plus, LogOut, Home } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/auth-context'
 import { uploadFileWithUniqueName } from '@/lib/storage-utils'
+import { useToast } from '@/components/ui/toast'
 import Link from 'next/link'
 
 interface ProductFormData {
@@ -30,7 +31,8 @@ interface ColorWithPhotos {
 const TALLAS_DISPONIBLES = ['26', '28', '30', '32', '34']
 
 export function ProductForm() {
-  const { logout } = useAuth()
+  const { logout, logAdminAction, adminUser } = useAuth()
+  const { success, error, ToastContainer } = useToast()
   const [formData, setFormData] = useState<ProductFormData>({
     nombre: '',
     precioUnitario: '',
@@ -320,28 +322,47 @@ export function ProductForm() {
         fotoMedidas: null
       })
       
-      alert('Producto creado exitosamente!')
-      
-      // Redirigir al dashboard
-      window.location.href = '/admin'
+      // Registrar creación de producto en logs
+      if (adminUser) {
+        await logAdminAction(
+          'create_producto',
+          `Creó nuevo producto: ${formData.nombre}`,
+          'producto',
+          producto.id,
+          { 
+            nombre: formData.nombre,
+            precio: formData.precioUnitario,
+            precio_mayor: formData.precioMayor,
+            tallas: formData.tallas,
+            colores: formData.colores
+          }
+        )
+      }
 
-    } catch (error) {
-      console.error('Error creando producto:', error)
+      success('¡Producto creado exitosamente!', `El producto "${formData.nombre}" ha sido creado correctamente.`)
+      
+      // Redirigir al dashboard después de un breve delay
+      setTimeout(() => {
+        window.location.href = '/admin'
+      }, 2000)
+
+    } catch (err) {
+      console.error('Error creando producto:', err)
       console.error('Error details:', {
-        message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined,
-        error: error
+        message: err instanceof Error ? err.message : 'Unknown error',
+        stack: err instanceof Error ? err.stack : undefined,
+        error: err
       })
       
       // Mostrar mensaje más específico
       let errorMessage = 'Error al crear el producto.'
-      if (error instanceof Error) {
-        errorMessage = `Error: ${error.message}`
-      } else if (typeof error === 'object' && error !== null) {
-        errorMessage = `Error: ${JSON.stringify(error)}`
+      if (err instanceof Error) {
+        errorMessage = err.message
+      } else if (typeof err === 'object' && err !== null) {
+        errorMessage = JSON.stringify(err)
       }
       
-      alert(errorMessage)
+      error('Error al crear producto', errorMessage)
     } finally {
       setIsSubmitting(false)
     }
@@ -610,6 +631,9 @@ export function ProductForm() {
           </Button>
         </form>
       </Card>
+      
+      {/* Toast Container */}
+      <ToastContainer />
     </div>
   )
 }

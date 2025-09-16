@@ -22,7 +22,7 @@ const LoadingSkeleton = memo(function LoadingSkeleton() {
         className="space-y-4 animate-fade-in-up"
         style={{ animationDelay: `${i * 100}ms` }}
       >
-        <div className="aspect-square w-full rounded-lg overflow-hidden">
+        <div className="w-full rounded-lg overflow-hidden" style={{ aspectRatio: '4/5' }}>
           <Skeleton className="w-full h-full animate-shimmer" />
         </div>
         <div className="space-y-3">
@@ -104,7 +104,7 @@ export function FeaturedProducts({ productos, isLoading, error }: FeaturedProduc
         >
           <Suspense fallback={
             <div className="space-y-4">
-              <Skeleton className="aspect-square w-full rounded-lg animate-shimmer" />
+              <Skeleton className="w-full rounded-lg animate-shimmer" style={{ aspectRatio: '4/5' }} />
               <div className="space-y-2">
                 <Skeleton className="h-4 w-3/4 animate-shimmer" />
                 <Skeleton className="h-4 w-1/2 animate-shimmer" />

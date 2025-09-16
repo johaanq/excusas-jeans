@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { LoadingSpinner } from '@/components/ui/loading-spinner'
-import { Plus, Package, Users, LogOut, Home, Edit } from 'lucide-react'
+import { Plus, Package, Users, LogOut, Home, Edit, Settings, FileText } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/auth-context'
 import Link from 'next/link'
@@ -189,6 +189,20 @@ export function AdminDashboard() {
               <Button variant="outline" className="w-full justify-start text-sm md:text-base">
                 <Package className="w-4 h-4 mr-2" />
                 Gestionar Productos
+              </Button>
+            </Link>
+            
+            <Link href="/admin/administradores">
+              <Button variant="outline" className="w-full justify-start text-sm md:text-base">
+                <Settings className="w-4 h-4 mr-2" />
+                Gestionar Administradores
+              </Button>
+            </Link>
+            
+            <Link href="/admin/logs">
+              <Button variant="outline" className="w-full justify-start text-sm md:text-base">
+                <FileText className="w-4 h-4 mr-2" />
+                Ver Logs de Actividad
               </Button>
             </Link>
           </div>

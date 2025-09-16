@@ -5,9 +5,11 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { LoadingSpinner } from '@/components/ui/loading-spinner'
-import { Edit, Trash2, Eye, Plus } from 'lucide-react'
+import { Edit, Trash2, Eye, Plus, ArrowLeft } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { extractStoragePath, deleteFilesFromStorage } from '@/lib/storage-utils'
+import { useToast } from '@/components/ui/toast'
+import { useConfirmDialog } from '@/components/ui/confirm-dialog'
 import Link from 'next/link'
 
 interface Producto {
@@ -31,6 +33,8 @@ interface Producto {
 }
 
 export function ProductList() {
+  const { success, error, ToastContainer } = useToast()
+  const { showConfirm, ConfirmDialogComponent } = useConfirmDialog()
   const [productos, setProductos] = useState<Producto[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isMounted, setIsMounted] = useState(false)
@@ -66,9 +70,18 @@ export function ProductList() {
   }
 
   const deleteProducto = async (id: string) => {
-    if (!confirm('¿Estás seguro de que quieres eliminar este producto? Esta acción eliminará permanentemente:\n\n• El producto y todos sus datos\n• Todas las imágenes asociadas\n• Colores, tallas y fotos relacionadas\n\nEsta acción NO se puede deshacer.')) {
-      return
-    }
+    const producto = productos.find(p => p.id === id)
+    if (!producto) return
+
+    const confirmed = await showConfirm({
+      title: 'Eliminar Producto',
+      message: `¿Estás seguro de que quieres eliminar "${producto.nombre}"? Esta acción eliminará permanentemente:\n\n• El producto y todos sus datos\n• Todas las imágenes asociadas\n• Colores, tallas y fotos relacionadas\n\nEsta acción NO se puede deshacer.`,
+      type: 'danger',
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar'
+    })
+
+    if (!confirmed) return
 
     // Agregar ID a la lista de productos siendo eliminados
     setDeletingIds(prev => new Set(prev).add(id))
@@ -138,10 +151,10 @@ export function ProductList() {
       
       // Recargar la lista
       await loadProductos()
-      alert('Producto eliminado exitosamente')
-    } catch (error) {
-      console.error('Error deleting producto:', error)
-      alert('Error al eliminar el producto. Revisa la consola para más detalles.')
+      success('Producto eliminado', 'El producto ha sido eliminado exitosamente')
+    } catch (err) {
+      console.error('Error deleting producto:', err)
+      error('Error al eliminar producto', 'No se pudo eliminar el producto. Revisa la consola para más detalles.')
     } finally {
       // Remover ID de la lista de productos siendo eliminados
       setDeletingIds(prev => {
@@ -166,9 +179,9 @@ export function ProductList() {
       
       // Recargar la lista
       await loadProductos()
-    } catch (error) {
-      console.error('Error updating estado:', error)
-      alert('Error al actualizar el estado del producto')
+    } catch (err) {
+      console.error('Error updating estado:', err)
+      error('Error al actualizar producto', 'No se pudo actualizar el estado del producto')
     }
   }
 
@@ -179,10 +192,17 @@ export function ProductList() {
 
   return (
     <div className="space-y-6">
-      {/* Header con botón de crear */}
+      {/* Header con navegación */}
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Productos</h2>
-        <Link href="/admin">
+        <div className="flex items-center space-x-4">
+          <Link href="/admin">
+            <Button variant="outline" size="sm" className="flex items-center space-x-2">
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+          </Link>
+          <h2 className="text-2xl font-bold">Gestión de Productos</h2>
+        </div>
+        <Link href="/admin/create">
           <Button className="flex items-center space-x-2">
             <Plus className="w-4 h-4" />
             <span>Nuevo Producto</span>
@@ -294,6 +314,12 @@ export function ProductList() {
           ))}
         </div>
       )}
+      
+      {/* Toast Container */}
+      <ToastContainer />
+      
+      {/* Confirm Dialog */}
+      <ConfirmDialogComponent />
     </div>
   )
 }

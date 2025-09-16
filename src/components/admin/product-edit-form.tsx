@@ -10,7 +10,9 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner'
 import { X, Plus, LogOut, ArrowLeft } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/auth-context'
-import { uploadFileWithUniqueName } from '@/lib/storage-utils'
+import { uploadFileWithUniqueName, extractStoragePath, deleteFilesFromStorage } from '@/lib/storage-utils'
+import { useToast } from '@/components/ui/toast'
+import { useConfirmDialog } from '@/components/ui/confirm-dialog'
 import Link from 'next/link'
 
 interface ProductFormData {
@@ -24,6 +26,11 @@ interface ProductFormData {
   estado: string
 }
 
+interface ColorWithPhotos {
+  nombre: string
+  fotos: File[]
+}
+
 interface ExistingData {
   producto: { id: string; nombre: string; precio?: number; precio_mayor?: number; estado: string }
   colores: { id: string; nombre: string; hex: string; fotos_color: { id: string; url: string }[] }[]
@@ -35,6 +42,8 @@ const TALLAS_DISPONIBLES = ['26', '28', '30', '32', '34']
 
 export function ProductEditForm({ productId }: { productId: string }) {
   const { logout } = useAuth()
+  const { success, error, ToastContainer } = useToast()
+  const { showConfirm, ConfirmDialogComponent } = useConfirmDialog()
   const [formData, setFormData] = useState<ProductFormData>({
     nombre: '',
     precioUnitario: '',
@@ -52,6 +61,7 @@ export function ProductEditForm({ productId }: { productId: string }) {
   const [isMounted, setIsMounted] = useState(false)
   const [existingData, setExistingData] = useState<ExistingData | null>(null)
   const [existingImages, setExistingImages] = useState<string[]>([])
+  const [coloresConFotos, setColoresConFotos] = useState<ColorWithPhotos[]>([])
 
   const loadProductData = useCallback(async () => {
     try {
@@ -97,9 +107,9 @@ export function ProductEditForm({ productId }: { productId: string }) {
         estado: producto.estado
       })
 
-    } catch (error) {
-      console.error('Error loading product data:', error)
-      alert('Error al cargar los datos del producto')
+    } catch (err) {
+      console.error('Error loading product data:', err)
+      error('Error al cargar producto', 'No se pudieron cargar los datos del producto')
     } finally {
       setIsLoading(false)
     }
@@ -121,10 +131,12 @@ export function ProductEditForm({ productId }: { productId: string }) {
 
   const handleColorAdd = () => {
     if (colorInput.trim() && !formData.colores.includes(colorInput.trim())) {
+      const nuevoColor = colorInput.trim()
       setFormData(prev => ({
         ...prev,
-        colores: [...prev.colores, colorInput.trim()]
+        colores: [...prev.colores, nuevoColor]
       }))
+      setColoresConFotos(prev => [...prev, { nombre: nuevoColor, fotos: [] }])
       setColorInput('')
     }
   }
@@ -134,6 +146,7 @@ export function ProductEditForm({ productId }: { productId: string }) {
       ...prev,
       colores: prev.colores.filter(c => c !== color)
     }))
+    setColoresConFotos(prev => prev.filter(c => c.nombre !== color))
   }
 
   const handleFotosProductoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -157,6 +170,99 @@ export function ProductEditForm({ productId }: { productId: string }) {
       ...prev,
       fotosProducto: prev.fotosProducto.filter((_, i) => i !== index)
     }))
+  }
+
+  const handleFotosColorChange = (colorNombre: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
+    setColoresConFotos(prev => 
+      prev.map(color => 
+        color.nombre === colorNombre 
+          ? { ...color, fotos: [...color.fotos, ...files] }
+          : color
+      )
+    )
+  }
+
+  const removeFotoColor = (colorNombre: string, index: number) => {
+    setColoresConFotos(prev => 
+      prev.map(color => 
+        color.nombre === colorNombre 
+          ? { ...color, fotos: color.fotos.filter((_, i) => i !== index) }
+          : color
+      )
+    )
+  }
+
+  const removeExistingFotoColor = async (colorId: string, fotoId: string, fotoUrl: string) => {
+    const confirmed = await showConfirm({
+      title: 'Eliminar Foto',
+      message: '¿Estás seguro de que quieres eliminar esta foto? Esta acción no se puede deshacer.',
+      type: 'danger',
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar'
+    })
+
+    if (!confirmed) return
+
+    try {
+      // Eliminar de la base de datos
+      const { error } = await supabase
+        .from('fotos_color')
+        .delete()
+        .eq('id', fotoId)
+
+      if (error) throw error
+
+      // Eliminar archivo del storage
+      const path = extractStoragePath(fotoUrl)
+      if (path) {
+        await deleteFilesFromStorage(supabase, 'productos', [path])
+      }
+
+      // Actualizar estado local - recargar datos del producto
+      await loadProductData()
+
+      success('Foto eliminada', 'La foto ha sido eliminada exitosamente')
+    } catch (err) {
+      console.error('Error deleting foto:', err)
+      error('Error al eliminar foto', 'No se pudo eliminar la foto. Intenta nuevamente.')
+    }
+  }
+
+  const removeFotoMedidas = async (fotoId: string, fotoUrl: string) => {
+    const confirmed = await showConfirm({
+      title: 'Eliminar Foto de Medidas',
+      message: '¿Estás seguro de que quieres eliminar esta foto de medidas? Esta acción no se puede deshacer.',
+      type: 'danger',
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar'
+    })
+
+    if (!confirmed) return
+
+    try {
+      // Eliminar de la base de datos
+      const { error } = await supabase
+        .from('fotos_medidas')
+        .delete()
+        .eq('id', fotoId)
+
+      if (error) throw error
+
+      // Eliminar archivo del storage
+      const path = extractStoragePath(fotoUrl)
+      if (path) {
+        await deleteFilesFromStorage(supabase, 'productos', [path])
+      }
+
+      // Actualizar estado local - recargar datos del producto
+      await loadProductData()
+
+      success('Foto eliminada', 'La foto de medidas ha sido eliminada exitosamente')
+    } catch (err) {
+      console.error('Error deleting foto medidas:', err)
+      error('Error al eliminar foto', 'No se pudo eliminar la foto de medidas. Intenta nuevamente.')
+    }
   }
 
   const uploadImage = async (file: File, path: string): Promise<string> => {
@@ -239,8 +345,27 @@ export function ProductEditForm({ productId }: { productId: string }) {
 
         if (colorError) throw colorError
 
-        // Subir fotos del color (fotos restantes del producto, después de la primera que ya se usó como principal)
+        // Subir fotos específicas del color
         const fotosColorData = []
+        
+        // Agregar fotos específicas del color si las hay
+        const colorConFotos = coloresConFotos.find(c => c.nombre === color)
+        if (colorConFotos && colorConFotos.fotos.length > 0) {
+          for (let j = 0; j < colorConFotos.fotos.length; j++) {
+            const file = colorConFotos.fotos[j]
+            const fileName = `${productId}/colores/${color.toLowerCase().replace(/[^a-z0-9]/g, '-')}/foto-${j + 1}.jpg`
+            
+            try {
+              const url = await uploadImage(file, fileName)
+              fotosColorData.push({
+                color_id: colorData.id,
+                url
+              })
+            } catch (error) {
+              console.error('Error subiendo foto:', error)
+            }
+          }
+        }
         
         // Agregar fotos restantes del producto (después de la primera que ya se usó como principal)
         const fotosRestantes = formData.fotosProducto.slice(1) // Excluir la primera foto
@@ -250,7 +375,7 @@ export function ProductEditForm({ productId }: { productId: string }) {
         
         for (let j = inicioIndex; j < finIndex; j++) {
           const file = fotosRestantes[j]
-          const fileName = `${productId}/${colorData.id}/producto-${j + 1}-${file.name}`
+          const fileName = `${productId}/colores/${color.toLowerCase().replace(/[^a-z0-9]/g, '-')}/producto-${j + 1}.jpg`
           
           try {
             const url = await uploadImage(file, fileName)
@@ -294,14 +419,14 @@ export function ProductEditForm({ productId }: { productId: string }) {
         if (medidasError) throw medidasError
       }
 
-      alert('Producto actualizado exitosamente!')
+      success('¡Producto actualizado exitosamente!', `El producto "${formData.nombre}" ha sido actualizado correctamente.`)
       
       // Redirigir a la lista de productos
       window.location.href = '/admin/products'
 
-    } catch (error) {
-      console.error('Error updating producto:', error)
-      alert('Error al actualizar el producto. Revisa la consola para más detalles.')
+    } catch (err) {
+      console.error('Error updating producto:', err)
+      error('Error al actualizar producto', 'No se pudo actualizar el producto. Revisa la consola para más detalles.')
     } finally {
       setIsSubmitting(false)
     }
@@ -443,41 +568,94 @@ export function ProductEditForm({ productId }: { productId: string }) {
             </div>
             
             {formData.colores.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-2">
+              <div className="space-y-4 mt-4">
                 {formData.colores.map((color, index) => (
-                  <Badge key={index} variant="secondary" className="flex items-center gap-1">
-                    {color}
-                    <button
-                      type="button"
-                      onClick={() => handleColorRemove(color)}
-                      className="ml-1 hover:text-red-500"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </Badge>
+                  <div key={index} className="border rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <Badge variant="secondary" className="flex items-center gap-1">
+                        {color}
+                        <button
+                          type="button"
+                          onClick={() => handleColorRemove(color)}
+                          className="ml-1 hover:text-red-500"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </Badge>
+                    </div>
+                    
+                    {/* Fotos específicas para este color */}
+                    <div>
+                      <Label htmlFor={`fotos-${color}`} className="text-sm">
+                        Fotos para {color}
+                      </Label>
+                      <Input
+                        id={`fotos-${color}`}
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={(e) => handleFotosColorChange(color, e)}
+                        className="mt-1"
+                      />
+                      
+                      {coloresConFotos.find(c => c.nombre === color)?.fotos && coloresConFotos.find(c => c.nombre === color)!.fotos.length > 0 && (
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2">
+                          {coloresConFotos.find(c => c.nombre === color)?.fotos?.map((file, fileIndex) => (
+                            <div key={fileIndex} className="relative">
+                              <img
+                                src={URL.createObjectURL(file)}
+                                alt={`${color} ${fileIndex + 1}`}
+                                className="w-full h-24 object-cover rounded border"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => removeFotoColor(color, fileIndex)}
+                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 ))}
               </div>
             )}
           </div>
 
-          {/* Imágenes existentes */}
-          {existingImages.length > 0 && (
+          {/* Fotos por Color Existentes */}
+          {existingData?.colores.some(color => color.fotos_color && color.fotos_color.length > 0) && (
             <div>
-              <Label>Imágenes Actuales</Label>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2">
-                {existingImages.map((url, index) => (
-                  <div key={index} className="relative">
-                    <img
-                      src={url}
-                      alt={`Imagen existente ${index + 1}`}
-                      className="w-full h-24 object-cover rounded border"
-                    />
-                  </div>
+              <Label>Fotos Actuales por Color</Label>
+              <div className="space-y-4 mt-2">
+                {existingData?.colores.map((color) => (
+                  color.fotos_color && color.fotos_color.length > 0 && (
+                    <div key={color.id} className="border rounded-lg p-4">
+                      <h4 className="font-medium text-gray-900 mb-2">{color.nombre}</h4>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                        {color.fotos_color.map((foto) => (
+                          <div key={foto.id} className="relative">
+                            <img
+                              src={foto.url}
+                              alt={`${color.nombre} ${foto.id}`}
+                              className="w-full h-24 object-cover rounded border"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeExistingFotoColor(color.id, foto.id, foto.url)}
+                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )
                 ))}
               </div>
-              <p className="text-sm text-gray-600 mt-2">
-                Las nuevas imágenes reemplazarán las existentes
-              </p>
             </div>
           )}
 
@@ -517,7 +695,32 @@ export function ProductEditForm({ productId }: { productId: string }) {
             </div>
           </div>
 
-          {/* Foto de Medidas */}
+          {/* Fotos de Medidas Existentes */}
+          {existingData?.fotosMedidas && existingData.fotosMedidas.length > 0 && (
+            <div>
+              <Label>Fotos de Medidas Actuales</Label>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2">
+                {existingData?.fotosMedidas.map((foto) => (
+                  <div key={foto.id} className="relative">
+                    <img
+                      src={foto.url}
+                      alt="Foto de medidas"
+                      className="w-full h-24 object-cover rounded border"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeFotoMedidas(foto.id, foto.url)}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Nueva Foto de Medidas */}
           <div>
             <Label htmlFor="foto-medidas">Nueva Foto de Medidas (opcional)</Label>
             <Input
@@ -549,6 +752,12 @@ export function ProductEditForm({ productId }: { productId: string }) {
           </Button>
         </form>
       </Card>
+      
+      {/* Toast Container */}
+      <ToastContainer />
+      
+      {/* Confirm Dialog */}
+      <ConfirmDialogComponent />
     </div>
   )
 }

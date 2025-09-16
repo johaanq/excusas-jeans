@@ -43,7 +43,7 @@ export const ProductCard = memo(function ProductCard({ producto }: ProductCardPr
   return (
     <Card className="group overflow-hidden border-border hover:shadow-xl transition-all duration-500 hover:-translate-y-2 bg-white h-full flex flex-col">
       <CardContent className="p-0 flex flex-col h-full">
-        <div className="relative aspect-square overflow-hidden bg-gray-100 flex-shrink-0">
+        <div className="relative overflow-hidden bg-gray-100 flex-shrink-0" style={{ aspectRatio: '4/5' }}>
           <Link href={`/producto/${producto.slug}`} className="block h-full">
             <div className="relative w-full h-full">
               {!imageLoaded && !imageError && (
