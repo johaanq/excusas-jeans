@@ -2,8 +2,7 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { ShoppingBag, Plus, Minus, Trash2, MessageCircle } from "lucide-react"
 import { useCart } from "@/hooks/use-cart"
 import { generateWhatsAppMessage, openWhatsApp } from "@/lib/utils"
@@ -16,8 +15,8 @@ interface CartDrawerProps {
   onOpenChange?: (open: boolean) => void
 }
 
-export function CartDrawer({ isScrolled = false, isOpen: externalIsOpen, onOpenChange }: CartDrawerProps) {
-  const { items, updateQuantity, removeItem, getTotalItems, getTotalPrice, clearCart } = useCart()
+export function CartDrawer({ isOpen: externalIsOpen, onOpenChange }: CartDrawerProps) {
+  const { items, updateQuantity, removeItem, getTotalPrice, clearCart } = useCart()
   const { user, isAuthenticated } = useUserAuth()
   const [internalIsOpen, setInternalIsOpen] = useState(false)
   

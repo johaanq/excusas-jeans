@@ -13,7 +13,7 @@ export interface AdminLog {
   resource_id: string | null
   ip_address: string | null
   user_agent: string | null
-  metadata: any
+  metadata: Record<string, unknown>
   created_at: string
 }
 
@@ -118,7 +118,7 @@ export function useAdminLogs() {
     description?: string,
     resourceType?: string,
     resourceId?: string,
-    metadata?: any
+    metadata?: Record<string, unknown>
   ) => {
     try {
       // Obtener información del navegador

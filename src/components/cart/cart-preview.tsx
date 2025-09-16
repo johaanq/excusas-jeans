@@ -9,7 +9,6 @@ import { useCart } from "@/hooks/use-cart"
 import { generateWhatsAppMessage, openWhatsApp } from "@/lib/utils"
 import { useUserAuth } from "@/contexts/user-auth-context"
 import Image from "next/image"
-import Link from "next/link"
 
 interface CartPreviewProps {
   isScrolled?: boolean

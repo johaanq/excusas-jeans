@@ -16,7 +16,7 @@ interface AuthContextType {
   adminUser: AdminUser | null
   login: (username: string, password: string) => Promise<boolean>
   logout: () => void
-  logAdminAction: (action: string, description?: string, resourceType?: string, resourceId?: string, metadata?: any) => Promise<void>
+  logAdminAction: (action: string, description?: string, resourceType?: string, resourceId?: string, metadata?: Record<string, unknown>) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -116,7 +116,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     description?: string,
     resourceType?: string,
     resourceId?: string,
-    metadata?: any
+    metadata?: Record<string, unknown>
   ) => {
     if (!adminUser) return
 
