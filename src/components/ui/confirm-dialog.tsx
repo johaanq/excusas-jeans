@@ -169,6 +169,8 @@ export function useConfirmDialog() {
       isOpen={dialog.isOpen || false}
       onClose={dialog.onClose || (() => {})}
       onConfirm={dialog.onConfirm || (() => {})}
+      title={dialog.title || ''}
+      message={dialog.message || ''}
     />
   )
 
