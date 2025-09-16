@@ -21,7 +21,7 @@ export function CartPreview({ isScrolled = false, onOpenCart }: CartPreviewProps
   const { user, isAuthenticated } = useUserAuth()
   const [isVisible, setIsVisible] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
-  const timeoutRef = useRef<NodeJS.Timeout>()
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
   const pathname = usePathname()
 
   // Mostrar preview cuando se agrega un item
