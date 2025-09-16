@@ -1,13 +1,16 @@
 "use client"
 
 import Image from "next/image"
-import { SimpleFeaturedProducts } from "@/components/simple-featured-products"
+import { HorizontalProductCarousel } from "@/components/horizontal-product-carousel"
+import { NavigationArrows } from "@/components/horizontal-product-carousel"
 import { useProductos } from "@/hooks/use-productos"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
+import { CarouselProvider, useCarouselContext } from "@/contexts/carousel-context"
 
-export default function HomePage() {
+function HomePageContent() {
   const { featuredProducts, isLoading, error } = useProductos()
+  const { scrollLeft, scrollRight, canScrollLeft, canScrollRight } = useCarouselContext()
 
   return (
     <div className="min-h-screen bg-white">
@@ -36,13 +39,21 @@ export default function HomePage() {
         {/* Productos Destacados */}
         <section className="mb-12 md:mb-20">
           <div className="mb-6 sm:mb-8 md:mb-12">
-            <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 animate-slide-up delay-200">
-              Nuestros Productos
-            </h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 animate-slide-up delay-200">
+                Nuestros Productos
+              </h2>
+              <NavigationArrows
+                scrollLeft={scrollLeft}
+                scrollRight={scrollRight}
+                canScrollLeft={canScrollLeft}
+                canScrollRight={canScrollRight}
+              />
+            </div>
           </div>
 
           <div>
-            <SimpleFeaturedProducts 
+            <HorizontalProductCarousel 
               productos={featuredProducts}
               isLoading={isLoading}
               error={error || undefined}
@@ -82,5 +93,13 @@ export default function HomePage() {
 
       <Footer />
     </div>
+  )
+}
+
+export default function HomePage() {
+  return (
+    <CarouselProvider>
+      <HomePageContent />
+    </CarouselProvider>
   )
 }

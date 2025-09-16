@@ -109,7 +109,7 @@ export function useProductos(): UseProductosReturn {
 
   // Memoizar productos destacados para evitar recálculos
   const featuredProducts = useMemo(() => {
-    return productos.slice(0, 4)
+    return productos.slice(0, 10) // Mostrar hasta 10 productos destacados
   }, [productos])
 
   return {
