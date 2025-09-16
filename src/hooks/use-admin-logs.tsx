@@ -69,8 +69,8 @@ export function useAdminLogs() {
 
       const transformedData = result.data?.map(log => ({
         id: log.id,
-        admin_username: log.administradores.username,
-        admin_nombre: log.administradores.nombre,
+        admin_username: log.administradores?.[0]?.username,
+        admin_nombre: log.administradores?.[0]?.nombre,
         action: log.action,
         description: log.description,
         resource_type: log.resource_type,
