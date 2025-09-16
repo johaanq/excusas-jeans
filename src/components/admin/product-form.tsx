@@ -170,21 +170,16 @@ export function ProductForm() {
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-+|-+$/g, '')
       
-      console.log('Generated slug:', slug)
 
       // 1. Subir imagen principal del producto (primera foto)
       let fotoPrincipalUrl = null
       if (formData.fotosProducto.length > 0) {
-        console.log('Subiendo imagen principal...')
         const primeraFoto = formData.fotosProducto[0]
         const fileName = `${slug}/principal.jpg`
-        console.log('File name for principal image:', fileName)
         fotoPrincipalUrl = await uploadImage(primeraFoto, fileName)
-        console.log('Imagen principal subida:', fotoPrincipalUrl)
       }
 
       // 2. Crear el producto
-      console.log('Creando producto en la base de datos...')
       const productoData = {
         nombre: formData.nombre,
         slug,
@@ -194,7 +189,6 @@ export function ProductForm() {
         estado: 'activo',
         foto_principal: fotoPrincipalUrl
       }
-      console.log('Product data to insert:', productoData)
       
       const { data: producto, error: productoError } = await supabase
         .from('productos')
@@ -207,16 +201,13 @@ export function ProductForm() {
         throw new Error(`Error creando producto: ${productoError.message}`)
       }
       
-      console.log('Producto creado:', producto)
 
       // 3. Crear las tallas
-      console.log('Creando tallas...')
       const tallasData = formData.tallas.map(talla => ({
         producto_id: producto.id,
         talla,
         en_stock: true
       }))
-      console.log('Tallas data:', tallasData)
 
       const { error: tallasError } = await supabase
         .from('tallas')
@@ -226,13 +217,10 @@ export function ProductForm() {
         console.error('Error creating tallas:', tallasError)
         throw new Error(`Error creando tallas: ${tallasError.message}`)
       }
-      console.log('Tallas creadas exitosamente')
 
       // 4. Crear los colores y subir sus fotos
-      console.log('Creando colores y subiendo fotos...')
       for (let i = 0; i < formData.colores.length; i++) {
         const color = formData.colores[i]
-        console.log(`Procesando color ${i + 1}/${formData.colores.length}: ${color}`)
         
         // Crear el color
         const colorDataToInsert = {

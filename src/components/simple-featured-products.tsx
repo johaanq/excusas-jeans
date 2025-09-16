@@ -71,23 +71,25 @@ export function SimpleFeaturedProducts({ productos, isLoading, error }: SimpleFe
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-      {productos.map((producto, index) => (
-        <div
-          key={producto.id}
-          className="animate-fade-in-up"
-          style={{ animationDelay: `${index * 100}ms` }}
-        >
-          <Suspense fallback={
-            <div className="space-y-3">
-              <Skeleton className="aspect-square w-full rounded-lg animate-shimmer" />
-              <Skeleton className="h-4 w-3/4 mx-auto animate-shimmer" />
-              <Skeleton className="h-3 w-1/2 mx-auto animate-shimmer" />
-            </div>
-          }>
-            <SimpleProductCard producto={producto} />
-          </Suspense>
-        </div>
-      ))}
+      {productos.map((producto, index) => {
+        const delayClass = `delay-${Math.min(index * 100, 1000)}`
+        return (
+          <div
+            key={producto.id}
+            className={`animate-slide-up ${delayClass}`}
+          >
+            <Suspense fallback={
+              <div className="space-y-3">
+                <Skeleton className="aspect-square w-full rounded-lg animate-shimmer" />
+                <Skeleton className="h-4 w-3/4 mx-auto animate-shimmer" />
+                <Skeleton className="h-3 w-1/2 mx-auto animate-shimmer" />
+              </div>
+            }>
+              <SimpleProductCard producto={producto} />
+            </Suspense>
+          </div>
+        )
+      })}
     </div>
   )
 }

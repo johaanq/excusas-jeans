@@ -14,14 +14,14 @@ export default function HomePage() {
       <Header />
 
       {/* Hero Image */}
-      <section className="relative w-full bg-gray-200">
+      <section className="relative w-full bg-gray-200 overflow-hidden">
         <div className="relative w-full">
           <Image
             src="/hero1.png"
             alt="Excusas Jeans - Colección Principal"
             width={1200}
             height={800}
-            className="w-full h-auto object-contain"
+            className="w-full h-auto object-contain animate-hero-zoom"
             priority
             sizes="(max-width: 640px) 100vw, (max-width: 768px) 100vw, (max-width: 1024px) 100vw, (max-width: 1280px) 100vw, 100vw"
           />
@@ -36,7 +36,7 @@ export default function HomePage() {
         {/* Productos Destacados */}
         <section className="mb-12 md:mb-20">
           <div className="mb-6 sm:mb-8 md:mb-12">
-            <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900">
+            <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 animate-slide-up delay-200">
               Nuestros Productos
             </h2>
           </div>

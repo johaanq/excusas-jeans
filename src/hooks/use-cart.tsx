@@ -93,28 +93,18 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [items, isAuthenticated])
 
   const addItem = async (producto: Producto, color: Color, talla: string, cantidad = 1) => {
-    console.log('useCart addItem called with:', {
-      producto: {
-        id: producto.id,
-        nombre: producto.nombre,
-        foto_principal: producto.foto_principal,
-        has_foto_principal: !!producto.foto_principal
-      },
-      color: {
-        id: color.id,
-        nombre: color.nombre,
-        fotos: color.fotos?.length
-      },
-      talla,
-      cantidad,
-      isAuthenticated
-    })
 
     if (isAuthenticated) {
       // For authenticated users, add to Supabase cart
       try {
         await addToSupabaseCart(producto.id, color.id, talla, cantidad)
         // The cart will be updated via the useEffect that watches carrito
+        // Dispatch custom event to notify cart preview
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('cartItemAdded', { 
+            detail: { producto, color, talla, cantidad } 
+          }))
+        }
       } catch (error) {
         console.error('Error adding to Supabase cart:', error)
         alert('Error al agregar al carrito')
@@ -136,6 +126,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           return [...prevItems, { producto, color, talla, cantidad }]
         }
       })
+      
+      // Dispatch custom event to notify cart preview
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('cartItemAdded', { 
+          detail: { producto, color, talla, cantidad } 
+        }))
+      }
     }
   }
 

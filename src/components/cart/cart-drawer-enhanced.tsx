@@ -14,11 +14,16 @@ import { generateWhatsAppMessage, openWhatsApp } from '@/lib/utils'
 
 interface CartDrawerEnhancedProps {
   isScrolled?: boolean
+  isOpen?: boolean
+  onOpenChange?: (open: boolean) => void
 }
 
-export function CartDrawerEnhanced({ isScrolled = false }: CartDrawerEnhancedProps) {
+export function CartDrawerEnhanced({ isScrolled = false, isOpen: externalIsOpen, onOpenChange }: CartDrawerEnhancedProps) {
   const { user, carrito, isAuthenticated, removeFromCart, updateCartItemQuantity, clearCart } = useUserAuth()
-  const [isOpen, setIsOpen] = useState(false)
+  const [internalIsOpen, setInternalIsOpen] = useState(false)
+  
+  const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen
+  const setIsOpen = onOpenChange || setInternalIsOpen
 
   const getTotalItems = () => {
     return carrito?.items?.reduce((total, item) => total + item.cantidad, 0) || 0
@@ -78,25 +83,6 @@ export function CartDrawerEnhanced({ isScrolled = false }: CartDrawerEnhancedPro
   return (
     <>
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
-      <SheetTrigger asChild>
-        <Button variant="ghost" size="sm" className={`relative transition-colors ${
-          isScrolled 
-            ? 'text-gray-600 hover:text-gray-900 hover:bg-gray-50' 
-            : 'text-white hover:text-gray-200 hover:bg-white/10'
-        }`}>
-          <ShoppingCart className="w-4 h-4" />
-          <ClientOnly>
-            {getTotalItems() > 0 && (
-              <Badge 
-                variant="destructive" 
-                className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs"
-              >
-                {getTotalItems()}
-              </Badge>
-            )}
-          </ClientOnly>
-        </Button>
-      </SheetTrigger>
       
       <SheetContent className="w-full sm:max-w-lg">
         <SheetHeader>
@@ -154,21 +140,6 @@ export function CartDrawerEnhanced({ isScrolled = false }: CartDrawerEnhancedPro
                 ) : (
                   <div className="space-y-4">
                     {carrito.items.map((item) => {
-                      // Debug detallado de los datos del item
-                      console.log('Cart item debug:', {
-                        itemId: item.id,
-                        producto: {
-                          id: item.producto?.id,
-                          nombre: item.producto?.nombre
-                        },
-                        color: {
-                          id: item.color?.id,
-                          nombre: item.color?.nombre
-                        },
-                        talla: item.talla,
-                        cantidad: item.cantidad
-                      })
-                      
                       return (
                         <Card key={item.id} className="p-4">
                           <div className="flex space-x-3">

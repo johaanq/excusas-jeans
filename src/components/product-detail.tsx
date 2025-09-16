@@ -105,7 +105,6 @@ function ProductDetailContent({ producto }: ProductDetailProps) {
     await addItem(productoConPrecioCorrecto, selectedColor, selectedTalla, cantidad)
     // Reset form
     setCantidad(1)
-    alert('Producto agregado al carrito!')
   }
 
   const handleWhatsAppOrder = async () => {

@@ -42,7 +42,6 @@ export function generateWhatsAppMessage(items: { producto?: { nombre?: string; p
   empresa_envio?: string
   sede_envio?: string
 }): string {
-  console.log('generateWhatsAppMessage called with:', { items, customerInfo })
   if (!items || items.length === 0) {
     let message = "¡Hola! Me gustaría obtener más información sobre sus productos."
     
@@ -59,13 +58,6 @@ export function generateWhatsAppMessage(items: { producto?: { nombre?: string; p
                      customerInfo.provincia?.toLowerCase() === 'lima metropolitana' ||
                      customerInfo.provincia?.toLowerCase() === 'callao'
       
-      // Debug temporal para verificar datos
-      console.log('🔍 DEBUG WhatsApp (carrito vacío) - Datos del cliente:', {
-        provincia: customerInfo.provincia,
-        isLima,
-        empresa_envio: customerInfo.empresa_envio,
-        sede_envio: customerInfo.sede_envio
-      })
       
       if (isLima) {
         // Datos para Lima
@@ -120,13 +112,6 @@ export function generateWhatsAppMessage(items: { producto?: { nombre?: string; p
                    customerInfo.provincia?.toLowerCase() === 'lima metropolitana' ||
                    customerInfo.provincia?.toLowerCase() === 'callao'
     
-    // Debug temporal para verificar datos
-    console.log('🔍 DEBUG WhatsApp - Datos del cliente:', {
-      provincia: customerInfo.provincia,
-      isLima,
-      empresa_envio: customerInfo.empresa_envio,
-      sede_envio: customerInfo.sede_envio
-    })
     
     if (isLima) {
       // Datos para Lima
@@ -145,24 +130,19 @@ export function generateWhatsAppMessage(items: { producto?: { nombre?: string; p
   
   message += `¿Están disponibles? ¿Cuál es el precio por mayor?`
 
-  console.log('Generated message:', message)
   return encodeURIComponent(message)
 }
 
 // Función mejorada para abrir WhatsApp
 export async function openWhatsApp(phoneNumber: string, message?: string) {
-  console.log('openWhatsApp called with:', { phoneNumber, message })
   const cleanPhoneNumber = phoneNumber.replace(/\D/g, '') // Solo números
   const deviceType = getDeviceType()
   
   // Copiar mensaje al portapapeles si existe
   if (message) {
     const decodedMessage = decodeURIComponent(message)
-    console.log('Decoded message:', decodedMessage)
     try {
       await copyToClipboard(decodedMessage)
-      console.log('Mensaje copiado al portapapeles:', decodedMessage)
-      
       // Mostrar notificación de que el mensaje fue copiado
       showClipboardNotification()
     } catch (error) {
@@ -175,21 +155,18 @@ export async function openWhatsApp(phoneNumber: string, message?: string) {
     const url = message 
       ? `https://wa.me/${cleanPhoneNumber}?text=${message}`
       : `https://wa.me/${cleanPhoneNumber}`
-    console.log('Abriendo WhatsApp móvil:', url)
     window.open(url, '_blank')
   } else if (deviceType === 'tablet') {
     // En tablet, usar wa.me (puede abrir app o web)
     const url = message 
       ? `https://wa.me/${cleanPhoneNumber}?text=${message}`
       : `https://wa.me/${cleanPhoneNumber}`
-    console.log('Abriendo WhatsApp tablet:', url)
     window.open(url, '_blank')
   } else {
     // En desktop, usar WhatsApp Web
     const webUrl = message 
       ? `https://web.whatsapp.com/send?phone=${cleanPhoneNumber}&text=${message}`
       : `https://web.whatsapp.com/send?phone=${cleanPhoneNumber}`
-    console.log('Abriendo WhatsApp Web:', webUrl)
     window.open(webUrl, '_blank')
   }
 }
