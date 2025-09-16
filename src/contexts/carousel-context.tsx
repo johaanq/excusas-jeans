@@ -4,7 +4,7 @@ import { createContext, useContext, ReactNode } from 'react'
 import { useCarouselControls } from '@/hooks/use-carousel-controls'
 
 interface CarouselContextType {
-  scrollContainerRef: React.RefObject<HTMLDivElement>
+  scrollContainerRef: React.RefObject<HTMLDivElement | null>
   canScrollLeft: boolean
   canScrollRight: boolean
   checkScrollButtons: () => void
