@@ -5,7 +5,6 @@ import { SimpleFeaturedProducts } from "@/components/simple-featured-products"
 import { useProductos } from "@/hooks/use-productos"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
-import { ArrowRight } from "lucide-react"
 
 export default function HomePage() {
   const { featuredProducts, isLoading, error } = useProductos()

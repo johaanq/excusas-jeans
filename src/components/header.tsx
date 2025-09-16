@@ -2,14 +2,13 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { Menu, User, LogOut, MessageCircle } from "lucide-react"
+import { Menu, User, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { CartDrawerEnhanced } from "@/components/cart/cart-drawer-enhanced"
 import { CartDrawer } from "@/components/cart/cart-drawer"
 import { ClientOnly } from "@/components/ui/client-only"
 import { SearchBar } from "@/components/search/search-bar"
 import { useUserAuth } from "@/contexts/user-auth-context"
-import { generateWhatsAppMessage, openWhatsApp } from "@/lib/utils"
 import { useState, useEffect } from "react"
 import { usePathname } from "next/navigation"
 

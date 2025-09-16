@@ -130,7 +130,7 @@ export function SearchBar({ isScrolled }: SearchBarProps) {
               </div>
             ) : searchResults.length === 0 ? (
               <div className="p-4 text-center text-gray-500 text-sm">
-                No se encontraron productos con "{searchTerm}"
+                No se encontraron productos con &quot;{searchTerm}&quot;
               </div>
             ) : (
               <div className="py-2">

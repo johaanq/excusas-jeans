@@ -105,7 +105,7 @@ export default function SearchPage() {
               No se encontraron productos
             </h2>
             <p className="text-gray-600 mb-6">
-              No hay productos que coincidan con "{searchTerm}". Intenta con otros términos.
+              No hay productos que coincidan con &quot;{searchTerm}&quot;. Intenta con otros términos.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link
@@ -125,7 +125,7 @@ export default function SearchPage() {
         ) : (
           <ProductGrid 
             productos={filteredProducts}
-            isLoading={false}
+            isLoading={isLoading}
             error={undefined}
           />
         )}
