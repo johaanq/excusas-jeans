@@ -8,14 +8,23 @@ import { CartPreview } from "@/components/cart/cart-preview"
 import { ClientOnly } from "@/components/ui/client-only"
 import { SearchBar } from "@/components/search/search-bar"
 import { useState, useEffect } from "react"
+import { usePathname } from "next/navigation"
 
 function HeaderContent() {
   const [isScrolled, setIsScrolled] = useState(false)
+  const pathname = usePathname()
+  const isHomePage = pathname === '/'
 
   useEffect(() => {
     function handleScroll() {
       const scrollTop = window.pageYOffset || document.documentElement.scrollTop
-      setIsScrolled(scrollTop > 50)
+      // Solo aplicar el efecto de scroll en la página principal
+      if (isHomePage) {
+        setIsScrolled(scrollTop > 50)
+      } else {
+        // En otras páginas, siempre mostrar como scrolled
+        setIsScrolled(true)
+      }
     }
 
     // Use passive listener for better performance
@@ -25,7 +34,7 @@ function HeaderContent() {
     handleScroll()
 
     return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
+  }, [isHomePage])
   return (
     <>
       <header id="main-header" className={`fixed top-0 z-50 w-full bg-transparent transition-all duration-300 ${isScrolled ? 'header-scrolled' : ''}`}>
