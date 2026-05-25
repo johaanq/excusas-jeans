@@ -9,8 +9,10 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert } from '@/components/ui/alert'
 import { Textarea } from '@/components/ui/textarea'
-import { ArrowLeft, Save, User, MapPin } from 'lucide-react'
+import { Save, User, MapPin } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import { Header } from '@/components/header'
+import { Footer } from '@/components/footer'
 
 interface ProfileFormData {
   nombre: string
@@ -127,7 +129,7 @@ export default function PerfilPage() {
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      router.push('/auth/login')
+      router.push('/cuenta?redirect=/perfil')
       return
     }
 
@@ -211,29 +213,24 @@ export default function PerfilPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Cargando perfil...</p>
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="flex min-h-[50vh] items-center justify-center pt-24">
+          <div className="text-center">
+            <div className="mx-auto h-12 w-12 animate-spin rounded-full border-2 border-gray-900 border-t-transparent" />
+            <p className="mt-4 text-gray-600">Cargando perfil...</p>
+          </div>
         </div>
+        <Footer />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-20 sm:pt-24 md:pt-28 pb-4 sm:pb-6 md:pb-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
+    <div className="min-h-screen bg-gray-50">
+      <Header />
+      <main className="container mx-auto max-w-4xl px-4 pb-12 pt-28 sm:pt-32">
         <div className="mb-6 sm:mb-8">
-          <Button
-            variant="ghost"
-            onClick={() => router.back()}
-            className="mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Volver
-          </Button>
-          
           <div className="flex items-center gap-2 sm:gap-3">
             <User className="w-6 h-6 sm:w-8 sm:h-8 text-gray-600" />
             <div>
@@ -450,7 +447,8 @@ export default function PerfilPage() {
             </Button>
           </div>
         </form>
-      </div>
+      </main>
+      <Footer />
     </div>
   )
 }

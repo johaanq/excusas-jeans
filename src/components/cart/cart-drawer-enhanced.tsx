@@ -107,7 +107,7 @@ export function CartDrawerEnhanced({ isScrolled = false, isOpen: externalIsOpen,
                 Con una cuenta podrás guardar tus productos favoritos y acceder a ellos desde cualquier dispositivo.
               </p>
               <div className="flex space-x-2">
-                <Link href="/auth/login">
+                <Link href="/cuenta">
                   <Button size="sm">
                     <LogIn className="w-4 h-4 mr-2" />
                     Iniciar Sesión

@@ -3,6 +3,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { Menu, User } from "lucide-react"
+import { useUserAuth } from "@/contexts/user-auth-context"
 import { Button } from "@/components/ui/button"
 import { CartPreview } from "@/components/cart/cart-preview"
 import { CartDrawer } from "@/components/cart/cart-drawer"
@@ -17,6 +18,7 @@ function HeaderContent() {
   const [isCartOpen, setIsCartOpen] = useState(false)
   const pathname = usePathname()
   const isHomePage = pathname === '/'
+  const { isAuthenticated, user } = useUserAuth()
 
   useEffect(() => {
     function handleScroll() {
@@ -115,12 +117,12 @@ function HeaderContent() {
               <ClientOnly fallback={
                 <div className="w-10 h-10 bg-gray-200 rounded"></div>
               }>
-                <Link href="/auth/login">
+                <Link href={isAuthenticated ? "/perfil" : "/cuenta"}>
                   <Button 
                     variant="ghost" 
                     size="icon" 
                     className="transition-colors text-white hover:text-gray-200"
-                    title="Iniciar Sesión"
+                    title={isAuthenticated ? user?.nombre ?? "Mi cuenta" : "Iniciar sesión"}
                   >
                     <User className="w-5 h-5" />
                   </Button>
@@ -185,6 +187,13 @@ function HeaderContent() {
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     Sobre Nosotros
+                  </Link>
+                  <Link 
+                    href={isAuthenticated ? "/perfil" : "/cuenta"}
+                    className="block py-2 text-gray-700 hover:text-gray-900"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    {isAuthenticated ? "Mi cuenta" : "Iniciar sesión"}
                   </Link>
                 </div>
               </nav>
