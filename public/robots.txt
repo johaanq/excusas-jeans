@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /login
+Disallow: /auth/
+Disallow: /cuenta
+Disallow: /perfil
+
+Host: https://excusasjeans.com
+Sitemap: https://excusasjeans.com/sitemap.xml

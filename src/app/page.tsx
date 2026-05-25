@@ -21,7 +21,7 @@ function HomePageContent() {
         <div className="relative w-full">
           <Image
             src="/hero1.png"
-            alt="Excusas Jeans - Colección Principal"
+            alt="Excusas Jeans — tienda de jeans en Perú | excusasjeans.com"
             width={1200}
             height={800}
             className="w-full h-auto object-contain animate-hero-zoom"

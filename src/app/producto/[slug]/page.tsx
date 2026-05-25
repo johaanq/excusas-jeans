@@ -1,7 +1,11 @@
 import { notFound } from "next/navigation"
+import type { Metadata } from "next"
 import { Header } from "@/components/header"
 import { ProductDetail } from "@/components/product-detail"
+import { JsonLd } from "@/components/seo/json-ld"
 import { supabase } from "@/lib/supabase"
+import { buildPageMetadata, buildProductJsonLd } from "@/lib/seo"
+import { SITE_NAME } from "@/lib/site"
 import type { Producto, SupabaseColor, SupabaseFotoColor, SupabaseTalla, SupabaseFotoMedida } from "@/data/productos"
 
 interface ProductPageProps {
@@ -197,6 +201,33 @@ async function getProductos(): Promise<Producto[]> {
   }
 }
 
+export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
+  const { slug } = await params
+  const producto = await getProductoBySlug(slug)
+  if (!producto) {
+    return { title: 'Producto no encontrado' }
+  }
+
+  const title = `${producto.nombre} — Jeans ${SITE_NAME}`
+  const description =
+    producto.descripcion?.slice(0, 155) ||
+    `Compra ${producto.nombre} en Excusas Jeans (excusasjeans.com). Jeans, excusas y moda denim en Perú.`
+
+  return buildPageMetadata({
+    title,
+    description,
+    path: `/producto/${slug}`,
+    keywords: [
+      producto.nombre,
+      'jeans',
+      'excusas jeans',
+      'excusas',
+      'excusasjeans',
+    ],
+    ogImage: producto.foto_principal || '/logo-excusas.png',
+  })
+}
+
 export default async function ProductPage({ params }: ProductPageProps) {
   const { slug } = await params
   const producto = await getProductoBySlug(slug)
@@ -207,6 +238,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
   return (
     <div className="min-h-screen bg-background">
+      <JsonLd data={buildProductJsonLd(producto)} />
       <Header />
       <main className="container mx-auto px-4 pt-20 sm:pt-24 md:pt-28 pb-4 sm:pb-6 md:pb-8">
         <ProductDetail producto={producto} />
