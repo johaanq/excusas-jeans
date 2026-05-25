@@ -78,40 +78,6 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     checkAuth()
-
-    // Escuchar cambios en la autenticación de Supabase
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.id)
-        
-        if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
-          if (event === 'SIGNED_OUT') {
-            setUser(null)
-            setCarrito(null)
-            setIsAuthenticated(false)
-            localStorage.removeItem('user_token')
-          }
-        } else if (event === 'SIGNED_IN' && session?.user) {
-          // Usuario se autenticó, obtener datos
-          const { data: userData, error: userError } = await supabase
-            .from('usuarios')
-            .select('*')
-            .eq('id', session.user.id)
-            .single()
-
-          if (userData && !userError) {
-            setUser(userData)
-            setIsAuthenticated(true)
-            await loadCart(userData.id)
-            localStorage.setItem('user_token', session.access_token)
-          }
-        }
-      }
-    )
-
-    return () => {
-      subscription.unsubscribe()
-    }
   }, [checkAuth])
 
   const loadCart = async (userId: string) => {
@@ -174,7 +140,7 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
         return { success: false, error: authError.message }
       }
 
-      if (authData.user && authData.session) {
+      if (authData?.user && authData?.session) {
         // Obtener datos del usuario
         const { data: userData, error: userError } = await supabase
           .from('usuarios')
@@ -203,29 +169,44 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
 
   const register = async (data: RegisterData): Promise<{ success: boolean; error?: string }> => {
     try {
-      // Registrar usuario en Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
-        password: data.password
+        password: data.password,
+        options: { data: { nombre: data.nombre } },
       })
 
       if (authError) {
         return { success: false, error: authError.message }
       }
 
-      if (authData.user) {
-        // Crear registro en nuestra tabla de usuarios
-        const { error: userError } = await supabase
-          .from('usuarios')
-          .insert({
-            id: authData.user.id,
-            nombre: data.nombre,
-            email: data.email,
-            telefono: data.telefono
-          })
+      if (authData?.user) {
+        const { error: userError } = await supabase.rpc('crear_perfil_usuario', {
+          p_id: authData.user.id,
+          p_nombre: data.nombre,
+          p_email: data.email,
+          p_telefono: data.telefono || null,
+        })
 
         if (userError) {
           return { success: false, error: 'Error al crear perfil de usuario' }
+        }
+
+        if (authData.requireEmailVerification) {
+          return { success: true }
+        }
+
+        if (authData.accessToken) {
+          localStorage.setItem('user_token', authData.accessToken)
+          setUser({
+            id: authData.user.id,
+            nombre: data.nombre,
+            email: data.email,
+            telefono: data.telefono,
+            created_at: authData.user.createdAt,
+            updated_at: authData.user.updatedAt,
+          })
+          setIsAuthenticated(true)
+          await loadCart(authData.user.id)
         }
 
         return { success: true }

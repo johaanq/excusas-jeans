@@ -1,5 +1,5 @@
 /**
- * Utilidades para manejo de archivos en Supabase Storage
+ * Utilidades para manejo de archivos en InsForge Storage
  */
 
 /**
@@ -23,10 +23,17 @@ export function buildUniquePath(basePath: string, originalFileName: string): str
 }
 
 /**
- * Sube un archivo a Supabase Storage con nombre único
+ * Sube un archivo a storage con nombre único
  */
 export async function uploadFileWithUniqueName(
-  supabase: { storage: { from: (bucket: string) => { upload: (path: string, file: File) => Promise<{ data: { path: string } | null; error: Error | null }>; getPublicUrl: (path: string) => { data: { publicUrl: string } } } } },
+  supabase: {
+    storage: {
+      from: (bucket: string) => {
+        upload: (path: string, file: File) => Promise<{ data: { path: string } | null; error: { message: string } | null }>
+        getPublicUrl: (path: string) => { data: { publicUrl: string } }
+      }
+    }
+  },
   bucket: string,
   file: File,
   basePath: string
@@ -58,11 +65,15 @@ export async function uploadFileWithUniqueName(
  */
 export function extractStoragePath(url: string): string | null {
   try {
-    // La URL de Supabase Storage tiene el formato:
-    // https://[project].supabase.co/storage/v1/object/public/productos/[path]
-    const urlParts = url.split('/storage/v1/object/public/productos/')
-    if (urlParts.length === 2) {
-      return urlParts[1]
+    // InsForge: .../api/storage/buckets/productos/objects/[path]
+    const insforgeParts = url.split('/api/storage/buckets/productos/objects/')
+    if (insforgeParts.length === 2) {
+      return decodeURIComponent(insforgeParts[1])
+    }
+    // Supabase legacy: .../storage/v1/object/public/productos/[path]
+    const supabaseParts = url.split('/storage/v1/object/public/productos/')
+    if (supabaseParts.length === 2) {
+      return supabaseParts[1]
     }
     return null
   } catch (error) {
@@ -75,7 +86,13 @@ export function extractStoragePath(url: string): string | null {
  * Elimina múltiples archivos del storage
  */
 export async function deleteFilesFromStorage(
-  supabase: { storage: { from: (bucket: string) => { remove: (paths: string[]) => Promise<{ error: Error | null }> } } },
+  supabase: {
+    storage: {
+      from: (bucket: string) => {
+        remove: (paths: string[]) => Promise<{ error: { message: string } | null }>
+      }
+    }
+  },
   bucket: string,
   filePaths: string[]
 ): Promise<void> {
