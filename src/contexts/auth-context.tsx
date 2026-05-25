@@ -1,7 +1,6 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
-import { supabase } from '@/lib/supabase'
 
 interface AdminUser {
   id: string
@@ -59,19 +58,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (username: string, password: string): Promise<boolean> => {
     try {
-      const { data, error } = await supabase
-        .rpc('verificar_admin_credenciales', {
-          p_username: username,
-          p_password: password
-        })
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      })
+      const json = await res.json()
 
-      if (error) {
-        console.error('Error verifying admin credentials:', error)
+      if (!res.ok) {
+        console.error('Error verifying admin credentials:', json.error)
         return false
       }
 
-      if (data && data.length > 0) {
-        const adminData = data[0]
+      const adminData = json.data
+      if (adminData) {
         const userData: AdminUser = {
           id: adminData.id,
           username: adminData.username,
@@ -135,15 +135,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const userAgent = typeof window !== 'undefined' ? window.navigator.userAgent : null
       
-      await supabase.rpc('registrar_admin_log', {
-        p_admin_id: adminUser.id,
-        p_action: action,
-        p_description: description || null,
-        p_resource_type: resourceType || null,
-        p_resource_id: resourceId || null,
-        p_ip_address: null,
-        p_user_agent: userAgent,
-        p_metadata: metadata || null
+      await fetch('/api/admin/log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          adminId: adminUser.id,
+          action,
+          description: description ?? null,
+          resourceType: resourceType ?? null,
+          resourceId: resourceId ?? null,
+          userAgent,
+          metadata: metadata ?? null,
+        }),
       })
     } catch (error) {
       console.error('Error logging admin action:', error)

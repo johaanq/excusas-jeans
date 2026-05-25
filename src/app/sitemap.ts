@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next'
-import { insforge } from '@/lib/insforge'
+import { hasPublicInsforgeKey, insforge } from '@/lib/insforge'
 import { getSiteUrl } from '@/lib/site'
 
 const STATIC_ROUTES: { path: string; priority: number; changeFrequency: MetadataRoute.Sitemap[0]['changeFrequency'] }[] = [
@@ -23,7 +23,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority,
   }))
 
-  try {
+  if (hasPublicInsforgeKey()) try {
     const { data: productos } = await insforge.database
       .from('productos')
       .select('slug, updated_at')

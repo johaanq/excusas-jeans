@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server'
-import { insforge } from '@/lib/insforge'
 import { getInsforgeAdmin } from '@/lib/insforge-admin'
 import type { AdminQueryPayload } from '@/lib/admin-api'
 
@@ -9,7 +8,8 @@ type Body = {
 }
 
 async function verifyAdmin(username: string, password: string) {
-  const { data, error } = await insforge.database.rpc('verificar_admin_credenciales', {
+  const admin = getInsforgeAdmin()
+  const { data, error } = await admin.database.rpc('verificar_admin_credenciales', {
     p_username: username,
     p_password: password,
   })

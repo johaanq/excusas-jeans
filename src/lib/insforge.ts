@@ -9,3 +9,8 @@ export const insforge = createClient({
 })
 
 export const INSFORGE_BASE_URL = baseUrl
+
+/** True cuando Vercel/build tiene la anon key (evita 401 en SSG). */
+export function hasPublicInsforgeKey(): boolean {
+  return Boolean(process.env.NEXT_PUBLIC_INSFORGE_ANON_KEY?.trim())
+}

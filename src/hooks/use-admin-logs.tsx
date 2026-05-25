@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useCallback } from 'react'
-import { supabase } from '@/lib/supabase'
+import { adminQuery } from '@/lib/admin-api'
 import { useAuth } from '@/contexts/auth-context'
 
 export interface AdminLog {
@@ -48,20 +48,19 @@ export function useAdminLogs() {
       const limit = filters.limit || 50
       const offset = filters.offset || 0
 
-      const { data, error: rpcError } = await supabase.rpc('obtener_admin_logs', {
-        p_limit: limit,
-        p_offset: offset,
-        p_admin_id: filters.admin_id || null,
-        p_action: filters.action || null,
-        p_username: creds.username,
-        p_password: creds.password,
+      const rows = await adminQuery<AdminLog[]>({
+        table: 'admin_logs',
+        op: 'rpc',
+        rpc: 'obtener_admin_logs',
+        rpcArgs: {
+          p_limit: limit,
+          p_offset: offset,
+          p_admin_id: filters.admin_id || null,
+          p_action: filters.action || null,
+          p_username: creds.username,
+          p_password: creds.password,
+        },
       })
-
-      if (rpcError) {
-        throw rpcError
-      }
-
-      const rows = (data as AdminLog[]) || []
       setLogs(rows)
       setTotalCount(rows.length < limit ? offset + rows.length : offset + limit + 1)
     } catch (err) {
@@ -84,20 +83,22 @@ export function useAdminLogs() {
       // Obtener información del navegador
       const userAgent = typeof window !== 'undefined' ? window.navigator.userAgent : null
       
-      const { error: logError } = await supabase
-        .rpc('registrar_admin_log', {
-          p_admin_id: adminId,
-          p_action: action,
-          p_description: description || null,
-          p_resource_type: resourceType || null,
-          p_resource_id: resourceId || null,
-          p_ip_address: null, // Se puede obtener del servidor si es necesario
-          p_user_agent: userAgent,
-          p_metadata: metadata || null
-        })
-
-      if (logError) {
-        console.error('Error logging admin action:', logError)
+      const res = await fetch('/api/admin/log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          adminId,
+          action,
+          description: description ?? null,
+          resourceType: resourceType ?? null,
+          resourceId: resourceId ?? null,
+          userAgent,
+          metadata: metadata ?? null,
+        }),
+      })
+      if (!res.ok) {
+        const json = await res.json()
+        console.error('Error logging admin action:', json.error)
       }
     } catch (err) {
       console.error('Error logging admin action:', err)

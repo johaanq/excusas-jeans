@@ -180,15 +180,20 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (authData?.user) {
-        const { error: userError } = await supabase.rpc('crear_perfil_usuario', {
-          p_id: authData.user.id,
-          p_nombre: data.nombre,
-          p_email: data.email,
-          p_telefono: data.telefono || null,
+        const profileRes = await fetch('/api/user/profile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: authData.user.id,
+            nombre: data.nombre,
+            email: data.email,
+            telefono: data.telefono || null,
+            accessToken: authData.accessToken ?? null,
+          }),
         })
-
-        if (userError) {
-          return { success: false, error: 'Error al crear perfil de usuario' }
+        const profileJson = await profileRes.json()
+        if (!profileRes.ok) {
+          return { success: false, error: profileJson.error || 'Error al crear perfil de usuario' }
         }
 
         if (authData.requireEmailVerification) {

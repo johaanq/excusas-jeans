@@ -34,21 +34,7 @@ DROP POLICY IF EXISTS productos_public_select ON public.productos;
 CREATE POLICY productos_public_select ON public.productos
   FOR SELECT TO public USING (estado = 'activo');
 
-DROP POLICY IF EXISTS tallas_public_select ON public.tallas;
-CREATE POLICY tallas_public_select ON public.tallas
-  FOR SELECT TO public USING (true);
-
-DROP POLICY IF EXISTS colores_public_select ON public.colores;
-CREATE POLICY colores_public_select ON public.colores
-  FOR SELECT TO public USING (true);
-
-DROP POLICY IF EXISTS fotos_color_public_select ON public.fotos_color;
-CREATE POLICY fotos_color_public_select ON public.fotos_color
-  FOR SELECT TO public USING (true);
-
-DROP POLICY IF EXISTS fotos_medidas_public_select ON public.fotos_medidas;
-CREATE POLICY fotos_medidas_public_select ON public.fotos_medidas
-  FOR SELECT TO public USING (true);
+-- Ver insforge-security-fix-v3.sql para políticas SELECT acotadas a productos activos
 
 -- Admin panel: lectura completa vía project_admin (API key en servidor)
 DROP POLICY IF EXISTS productos_admin_select ON public.productos;

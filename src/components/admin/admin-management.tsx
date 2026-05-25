@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card } from '@/components/ui/card'
 import { Alert } from '@/components/ui/alert'
-import { supabase } from '@/lib/supabase'
+import { adminQuery } from '@/lib/admin-api'
 import { useToast } from '@/components/ui/toast'
 import { UserPlus, Eye, EyeOff } from 'lucide-react'
 
@@ -41,39 +41,39 @@ export function AdminManagement() {
         return
       }
 
-      const { data, error: createError } = await supabase
-        .rpc('crear_admin', {
+      const data = await adminQuery<string>({
+        table: 'administradores',
+        op: 'rpc',
+        rpc: 'crear_admin',
+        rpcArgs: {
           p_username: formData.username,
           p_password: formData.password,
           p_nombre: formData.nombre,
           p_email: formData.email || null,
           p_creator_username: creds.username,
           p_creator_password: creds.password,
-        })
+        },
+      })
 
-      if (createError) {
-        showError('Error al crear administrador', createError.message)
-      } else {
-        success('Administrador creado', `El administrador "${formData.nombre}" ha sido creado exitosamente`)
-        
-        // Registrar creación de admin en logs
-        await logAdminAction(
-          'create_admin',
-          `Creó nuevo administrador: ${formData.nombre} (@${formData.username})`,
-          'admin',
-          data,
-          { username: formData.username, email: formData.email }
-        )
-        
-        setFormData({
-          username: '',
-          password: '',
-          nombre: '',
-          email: ''
-        })
-      }
+      success('Administrador creado', `El administrador "${formData.nombre}" ha sido creado exitosamente`)
+
+      await logAdminAction(
+        'create_admin',
+        `Creó nuevo administrador: ${formData.nombre} (@${formData.username})`,
+        'admin',
+        typeof data === 'string' ? data : undefined,
+        { username: formData.username, email: formData.email }
+      )
+
+      setFormData({
+        username: '',
+        password: '',
+        nombre: '',
+        email: '',
+      })
     } catch (err) {
-      showError('Error inesperado', 'No se pudo crear el administrador. Intenta nuevamente.')
+      const message = err instanceof Error ? err.message : 'No se pudo crear el administrador.'
+      showError('Error al crear administrador', message)
     } finally {
       setIsLoading(false)
     }

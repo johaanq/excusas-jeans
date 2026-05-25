@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { Header } from "@/components/header"
 import { ProductDetail } from "@/components/product-detail"
 import { JsonLd } from "@/components/seo/json-ld"
+import { hasPublicInsforgeKey } from "@/lib/insforge"
 import { supabase } from "@/lib/supabase"
 import { buildPageMetadata, buildProductJsonLd } from "@/lib/seo"
 import { SITE_NAME } from "@/lib/site"
@@ -15,6 +16,10 @@ interface ProductPageProps {
 }
 
 async function getProductoBySlug(slug: string): Promise<Producto | null> {
+  if (!hasPublicInsforgeKey()) {
+    return null
+  }
+
   try {
     const { data: productoData, error: productoError } = await supabase
       .from('productos')
@@ -110,6 +115,10 @@ async function getProductoBySlug(slug: string): Promise<Producto | null> {
 }
 
 async function getProductos(): Promise<Producto[]> {
+  if (!hasPublicInsforgeKey()) {
+    return []
+  }
+
   try {
     const { data: productosData, error: productosError } = await supabase
       .from('productos')
@@ -246,6 +255,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
     </div>
   )
 }
+
+export const dynamicParams = true
 
 export async function generateStaticParams() {
   const productos = await getProductos()
