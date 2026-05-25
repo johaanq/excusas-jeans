@@ -16,8 +16,11 @@ interface AuthContextType {
   adminUser: AdminUser | null
   login: (username: string, password: string) => Promise<boolean>
   logout: () => void
+  getAdminCredentials: () => { username: string; password: string } | null
   logAdminAction: (action: string, description?: string, resourceType?: string, resourceId?: string, metadata?: Record<string, unknown>) => Promise<void>
 }
+
+const ADMIN_SESSION_PW_KEY = 'admin_session_pw'
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
@@ -82,6 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Guardar en localStorage
         localStorage.setItem('admin_token', token)
         localStorage.setItem('admin_user', JSON.stringify(userData))
+        sessionStorage.setItem(ADMIN_SESSION_PW_KEY, password)
         
         setAdminUser(userData)
         setIsAuthenticated(true)
@@ -107,8 +111,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     localStorage.removeItem('admin_token')
     localStorage.removeItem('admin_user')
+    sessionStorage.removeItem(ADMIN_SESSION_PW_KEY)
     setAdminUser(null)
     setIsAuthenticated(false)
+  }
+
+  const getAdminCredentials = (): { username: string; password: string } | null => {
+    if (!adminUser) return null
+    const password = sessionStorage.getItem(ADMIN_SESSION_PW_KEY)
+    if (!password) return null
+    return { username: adminUser.username, password }
   }
 
   const logAdminAction = async (
@@ -139,7 +151,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, isLoading, adminUser, login, logout, logAdminAction }}>
+    <AuthContext.Provider value={{ isAuthenticated, isLoading, adminUser, login, logout, getAdminCredentials, logAdminAction }}>
       {children}
     </AuthContext.Provider>
   )

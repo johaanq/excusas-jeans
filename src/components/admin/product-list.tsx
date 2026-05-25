@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { LoadingSpinner } from '@/components/ui/loading-spinner'
-import { Edit, Trash2, Eye, Plus, ArrowLeft } from 'lucide-react'
+import { Edit, Trash2, Eye, Plus } from 'lucide-react'
+import { adminQuery } from '@/lib/admin-api'
 import { supabase } from '@/lib/supabase'
 import { extractStoragePath, deleteFilesFromStorage } from '@/lib/storage-utils'
 import { useToast } from '@/components/ui/toast'
@@ -47,20 +48,12 @@ export function ProductList() {
 
   const loadProductos = async () => {
     try {
-      const { data, error } = await supabase
-        .from('productos')
-        .select(`
-          *,
-          colores (
-            id,
-            nombre,
-            fotos_color (url)
-          ),
-          tallas (talla, en_stock)
-        `)
-        .order('created_at', { ascending: false })
-
-      if (error) throw error
+      const data = await adminQuery<Producto[]>({
+        op: 'select',
+        table: 'productos',
+        select: `*, colores (id, nombre, fotos_color (url)), tallas (talla, en_stock)`,
+        order: { column: 'created_at', ascending: false },
+      })
       setProductos(data || [])
     } catch (error) {
       console.error('Error loading productos:', error)
@@ -88,17 +81,17 @@ export function ProductList() {
 
     try {
       // Primero obtener todos los datos del producto para eliminar las imágenes
-      const { data: productoData } = await supabase
-        .from('productos')
-        .select(`
-          foto_principal,
-          colores (
-            fotos_color (url)
-          ),
-          fotos_medidas (url)
-        `)
-        .eq('id', id)
-        .single()
+      const productoData = await adminQuery<{
+        foto_principal?: string
+        colores?: { fotos_color?: { url: string }[] }[]
+        fotos_medidas?: { url: string }[]
+      }>({
+        op: 'select',
+        table: 'productos',
+        select: `foto_principal, colores (fotos_color (url)), fotos_medidas (url)`,
+        match: { id },
+        single: true,
+      })
 
       if (productoData) {
         const imagesToDelete: string[] = []
@@ -142,12 +135,11 @@ export function ProductList() {
       }
 
       // Eliminar el producto (esto eliminará automáticamente colores, tallas, fotos por CASCADE)
-      const { error } = await supabase
-        .from('productos')
-        .delete()
-        .eq('id', id)
-
-      if (error) throw error
+      await adminQuery({
+        op: 'delete',
+        table: 'productos',
+        match: { id },
+      })
       
       // Recargar la lista
       await loadProductos()
@@ -170,12 +162,12 @@ export function ProductList() {
     const nuevoEstado = estadoActual === 'activo' ? 'inactivo' : 'activo'
     
     try {
-      const { error } = await supabase
-        .from('productos')
-        .update({ estado: nuevoEstado })
-        .eq('id', id)
-
-      if (error) throw error
+      await adminQuery({
+        op: 'update',
+        table: 'productos',
+        data: { estado: nuevoEstado },
+        match: { id },
+      })
       
       // Recargar la lista
       await loadProductos()
@@ -192,20 +184,14 @@ export function ProductList() {
 
   return (
     <div className="space-y-6">
-      {/* Header con navegación */}
-      <div className="flex justify-between items-center">
-        <div className="flex items-center space-x-4">
-          <Link href="/admin">
-            <Button variant="outline" size="sm" className="flex items-center space-x-2">
-              <ArrowLeft className="w-4 h-4" />
-            </Button>
-          </Link>
-          <h2 className="text-2xl font-bold">Gestión de Productos</h2>
-        </div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm text-slate-500">
+          {productos.length} producto{productos.length !== 1 ? "s" : ""} en catálogo
+        </p>
         <Link href="/admin/create">
-          <Button className="flex items-center space-x-2">
-            <Plus className="w-4 h-4" />
-            <span>Nuevo Producto</span>
+          <Button className="flex w-full items-center justify-center gap-2 sm:w-auto">
+            <Plus className="h-4 w-4" />
+            Nuevo producto
           </Button>
         </Link>
       </div>

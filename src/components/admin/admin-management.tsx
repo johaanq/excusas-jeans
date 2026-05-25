@@ -19,7 +19,7 @@ interface AdminFormData {
 }
 
 export function AdminManagement() {
-  const { adminUser, logAdminAction } = useAuth()
+  const { adminUser, logAdminAction, getAdminCredentials } = useAuth()
   const { success, error: showError, ToastContainer } = useToast()
   const [formData, setFormData] = useState<AdminFormData>({
     username: '',
@@ -35,12 +35,20 @@ export function AdminManagement() {
     setIsLoading(true)
 
     try {
+      const creds = getAdminCredentials()
+      if (!creds) {
+        showError('Sesión expirada', 'Vuelve a iniciar sesión para crear administradores.')
+        return
+      }
+
       const { data, error: createError } = await supabase
         .rpc('crear_admin', {
           p_username: formData.username,
           p_password: formData.password,
           p_nombre: formData.nombre,
-          p_email: formData.email || null
+          p_email: formData.email || null,
+          p_creator_username: creds.username,
+          p_creator_password: creds.password,
         })
 
       if (createError) {

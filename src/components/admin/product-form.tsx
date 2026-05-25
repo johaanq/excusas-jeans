@@ -6,12 +6,12 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { X, Plus, LogOut, Home } from 'lucide-react'
+import { X, Plus } from 'lucide-react'
+import { adminQuery } from '@/lib/admin-api'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/auth-context'
 import { uploadFileWithUniqueName } from '@/lib/storage-utils'
 import { useToast } from '@/components/ui/toast'
-import Link from 'next/link'
 
 interface ProductFormData {
   nombre: string
@@ -31,7 +31,7 @@ interface ColorWithPhotos {
 const TALLAS_DISPONIBLES = ['26', '28', '30', '32', '34']
 
 export function ProductForm() {
-  const { logout, logAdminAction, adminUser } = useAuth()
+  const { logAdminAction, adminUser } = useAuth()
   const { success, error, ToastContainer } = useToast()
   const [formData, setFormData] = useState<ProductFormData>({
     nombre: '',
@@ -192,15 +192,15 @@ export function ProductForm() {
         foto_principal: fotoPrincipalUrl
       }
       
-      const { data: producto, error: productoError } = await supabase
-        .from('productos')
-        .insert(productoData)
-        .select()
-        .single()
-
-      if (productoError) {
-        console.error('Error creating producto:', productoError)
-        throw new Error(`Error creando producto: ${productoError.message}`)
+      const productoRows = await adminQuery<{ id: string }[]>({
+        op: 'insert',
+        table: 'productos',
+        data: productoData,
+        select: '*',
+      })
+      const producto = productoRows[0]
+      if (!producto) {
+        throw new Error('Error creando producto: respuesta vacía')
       }
       
 
@@ -211,14 +211,11 @@ export function ProductForm() {
         en_stock: true
       }))
 
-      const { error: tallasError } = await supabase
-        .from('tallas')
-        .insert(tallasData)
-
-      if (tallasError) {
-        console.error('Error creating tallas:', tallasError)
-        throw new Error(`Error creando tallas: ${tallasError.message}`)
-      }
+      await adminQuery({
+        op: 'insert',
+        table: 'tallas',
+        data: tallasData,
+      })
 
       // 4. Crear los colores y subir sus fotos
       for (let i = 0; i < formData.colores.length; i++) {
@@ -232,17 +229,16 @@ export function ProductForm() {
         }
         console.log('Color data to insert:', colorDataToInsert)
         
-        const { data: colorData, error: colorError } = await supabase
-          .from('colores')
-          .insert(colorDataToInsert)
-          .select()
-          .single()
-
-        if (colorError) {
-          console.error('Error creating color:', colorError)
-          throw new Error(`Error creando color ${color}: ${colorError.message}`)
+        const colorRows = await adminQuery<{ id: string }[]>({
+          op: 'insert',
+          table: 'colores',
+          data: colorDataToInsert,
+          select: '*',
+        })
+        const colorData = colorRows[0]
+        if (!colorData) {
+          throw new Error(`Error creando color ${color}`)
         }
-        console.log('Color creado:', colorData)
 
         // Subir fotos específicas del color (fotos del formulario + fotos restantes del producto)
         const colorConFotos = coloresConFotos.find(c => c.nombre === color)
@@ -288,11 +284,11 @@ export function ProductForm() {
         }
 
         if (fotosColorData.length > 0) {
-          const { error: fotosError } = await supabase
-            .from('fotos_color')
-            .insert(fotosColorData)
-
-          if (fotosError) throw fotosError
+          await adminQuery({
+            op: 'insert',
+            table: 'fotos_color',
+            data: fotosColorData,
+          })
         }
       }
 
@@ -301,14 +297,14 @@ export function ProductForm() {
         const fileName = `${slug}/medidas.jpg`
         const url = await uploadImage(formData.fotoMedidas, fileName)
         
-        const { error: medidasError } = await supabase
-          .from('fotos_medidas')
-          .insert({
+        await adminQuery({
+          op: 'insert',
+          table: 'fotos_medidas',
+          data: {
             producto_id: producto.id,
-            url
-          })
-
-        if (medidasError) throw medidasError
+            url,
+          },
+        })
       }
 
       // Limpiar formulario
@@ -369,38 +365,9 @@ export function ProductForm() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      {/* Header con navegación */}
-      <div className="mb-6 flex justify-between items-center">
-        <div className="flex items-center space-x-4">
-          <Link href="/" className="flex items-center space-x-2 text-gray-700 hover:text-gray-900">
-            <Home className="w-5 h-5" />
-            <span className="font-medium">Volver al sitio</span>
-          </Link>
-        </div>
-        
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2">
-            <div className="h-8 w-8 bg-gray-900 rounded-full flex items-center justify-center">
-              <span className="text-white text-sm font-medium">A</span>
-            </div>
-            <span className="text-gray-700 font-medium">Administrador</span>
-          </div>
-          
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={logout}
-            className="flex items-center space-x-2"
-          >
-            <LogOut className="w-4 h-4" />
-            <span>Cerrar Sesión</span>
-          </Button>
-        </div>
-      </div>
-
-      <Card className="p-6">
-        <h2 className="text-2xl font-bold mb-6">Crear Nuevo Producto</h2>
+    <div>
+      <Card className="border-slate-200/80 p-6 shadow-sm">
+        <h2 className="mb-6 text-xl font-bold text-slate-900">Datos del producto</h2>
         
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Nombre del producto */}

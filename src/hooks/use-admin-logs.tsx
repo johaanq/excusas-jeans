@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/contexts/auth-context'
 
 export interface AdminLog {
   id: string
@@ -25,6 +26,7 @@ export interface LogFilters {
 }
 
 export function useAdminLogs() {
+  const { getAdminCredentials } = useAuth()
   const [logs, setLogs] = useState<AdminLog[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -35,82 +37,40 @@ export function useAdminLogs() {
     setError(null)
 
     try {
-      // Consulta directa con join a administradores
-      let query = supabase
-        .from('admin_logs')
-        .select(`
-          id,
-          action,
-          description,
-          resource_type,
-          resource_id,
-          ip_address,
-          user_agent,
-          metadata,
-          created_at,
-          administradores!inner(username, nombre)
-        `)
-        .order('created_at', { ascending: false })
-        .range(filters.offset || 0, (filters.offset || 0) + (filters.limit || 50) - 1)
-      
-      // Aplicar filtros
-      if (filters.admin_id) {
-        query = query.eq('admin_id', filters.admin_id)
-      }
-      if (filters.action) {
-        query = query.eq('action', filters.action)
-      }
-      
-      const result = await query
-      
-      if (result.error) {
-        throw result.error
+      const creds = getAdminCredentials()
+      if (!creds) {
+        setError('Vuelve a iniciar sesión en el panel admin para ver los logs.')
+        setLogs([])
+        setTotalCount(0)
+        return
       }
 
-      const transformedData = result.data?.map(log => ({
-        id: log.id,
-        admin_username: log.administradores?.[0]?.username,
-        admin_nombre: log.administradores?.[0]?.nombre,
-        action: log.action,
-        description: log.description,
-        resource_type: log.resource_type,
-        resource_id: log.resource_id,
-        ip_address: log.ip_address,
-        user_agent: log.user_agent,
-        metadata: log.metadata,
-        created_at: log.created_at
-      })) || []
+      const limit = filters.limit || 50
+      const offset = filters.offset || 0
 
-      setLogs(transformedData)
-      
-      // Obtener conteo total
-      let countQuery = supabase
-        .from('admin_logs')
-        .select('*', { count: 'exact', head: true })
-      
-      if (filters.admin_id) {
-        countQuery = countQuery.eq('admin_id', filters.admin_id)
+      const { data, error: rpcError } = await supabase.rpc('obtener_admin_logs', {
+        p_limit: limit,
+        p_offset: offset,
+        p_admin_id: filters.admin_id || null,
+        p_action: filters.action || null,
+        p_username: creds.username,
+        p_password: creds.password,
+      })
+
+      if (rpcError) {
+        throw rpcError
       }
-      if (filters.action) {
-        countQuery = countQuery.eq('action', filters.action)
-      }
-      
-      const { count, error: countError } = await countQuery
-      
-      if (countError) {
-        console.warn('Count error:', countError)
-        setTotalCount(transformedData.length)
-      } else {
-        setTotalCount(count || 0)
-      }
-      
+
+      const rows = (data as AdminLog[]) || []
+      setLogs(rows)
+      setTotalCount(rows.length < limit ? offset + rows.length : offset + limit + 1)
     } catch (err) {
       console.error('Error fetching admin logs:', err)
       setError(`Error al cargar los logs: ${err instanceof Error ? err.message : 'Error desconocido'}`)
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [getAdminCredentials])
 
   const logAction = useCallback(async (
     adminId: string,

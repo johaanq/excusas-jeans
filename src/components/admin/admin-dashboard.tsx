@@ -1,31 +1,48 @@
 "use client"
 
-import { useState, useEffect } from 'react'
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { LoadingSpinner } from '@/components/ui/loading-spinner'
-import { Plus, Package, Users, LogOut, Home, Edit, Settings, FileText } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
-import { useAuth } from '@/contexts/auth-context'
-import Link from 'next/link'
+import { useState, useEffect } from "react"
+import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { LoadingSpinner } from "@/components/ui/loading-spinner"
+import { DonutKpi } from "@/components/admin/donut-kpi"
+import { Plus, Package, Edit, ShoppingCart, ImageIcon, Activity } from "lucide-react"
+import { adminQuery } from "@/lib/admin-api"
+import Link from "next/link"
 
 interface Stats {
   totalProductos: number
   productosActivos: number
   productosInactivos: number
+  productosConFoto: number
+  productosSinFoto: number
   totalUsuarios: number
+  usuariosConCarrito: number
+  totalItemsCarrito: number
+  logsHoy: number
+}
+
+interface RecentProduct {
+  id: string
+  nombre: string
+  estado: string
+  precio?: number
+  created_at: string
 }
 
 export function AdminDashboard() {
-  const { logout } = useAuth()
   const [stats, setStats] = useState<Stats>({
     totalProductos: 0,
     productosActivos: 0,
     productosInactivos: 0,
-    totalUsuarios: 0
+    productosConFoto: 0,
+    productosSinFoto: 0,
+    totalUsuarios: 0,
+    usuariosConCarrito: 0,
+    totalItemsCarrito: 0,
+    logsHoy: 0,
   })
-  const [recentProducts, setRecentProducts] = useState<{ id: string; nombre: string; estado: string; precio?: number; precio_mayor?: number; created_at: string; colores: { nombre: string }[]; tallas: { talla: string }[] }[]>([])
+  const [recentProducts, setRecentProducts] = useState<RecentProduct[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isMounted, setIsMounted] = useState(false)
 
@@ -36,207 +53,241 @@ export function AdminDashboard() {
 
   const loadDashboardData = async () => {
     try {
-      // Cargar estadísticas
-      const { data: productos, error: productosError } = await supabase
-        .from('productos')
-        .select('id, estado')
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
 
-      if (productosError) throw productosError
+      const [productos, usuarios, carritos, items, logs, recentProducts] = await Promise.all([
+        adminQuery<{ id: string; estado: string; foto_principal?: string }[]>({
+          op: "select",
+          table: "productos",
+          select: "id, estado, foto_principal",
+        }),
+        adminQuery<{ id: string }[]>({ op: "select", table: "usuarios", select: "id" }),
+        adminQuery<{ id: string; usuario_id: string }[]>({
+          op: "select",
+          table: "carritos",
+          select: "id, usuario_id",
+        }),
+        adminQuery<{ cantidad?: number }[]>({
+          op: "select",
+          table: "carrito_items",
+          select: "cantidad",
+        }),
+        adminQuery<{ created_at: string }[]>({
+          op: "select",
+          table: "admin_logs",
+          select: "id, created_at",
+        }),
+        adminQuery<RecentProduct[]>({
+          op: "select",
+          table: "productos",
+          select: "id, nombre, estado, precio, created_at",
+          order: { column: "created_at", ascending: false },
+        }),
+      ])
 
-      const { data: usuarios, error: usuariosError } = await supabase
-        .from('usuarios')
-        .select('id')
-
-      if (usuariosError) throw usuariosError
-
-      // Cargar productos recientes
-      const { data: recentProductsData, error: recentError } = await supabase
-        .from('productos')
-        .select(`
-          id,
-          nombre,
-          estado,
-          precio,
-          precio_mayor,
-          created_at,
-          colores (nombre),
-          tallas (talla)
-        `)
-        .order('created_at', { ascending: false })
-        .limit(5)
-
-      if (recentError) throw recentError
-
+      const logsHoy = (logs ?? []).filter(
+        (l) => new Date(l.created_at) >= today
+      ).length
+      const conFoto = productos.filter((p) => p.foto_principal).length
+      const activos = productos.filter((p) => p.estado === "activo").length
+      const inactivos = productos.filter((p) => p.estado === "inactivo").length
       setStats({
-        totalProductos: productos?.length || 0,
-        productosActivos: productos?.filter(p => p.estado === 'activo').length || 0,
-        productosInactivos: productos?.filter(p => p.estado === 'inactivo').length || 0,
-        totalUsuarios: usuarios?.length || 0
+        totalProductos: productos.length,
+        productosActivos: activos,
+        productosInactivos: inactivos,
+        productosConFoto: conFoto,
+        productosSinFoto: productos.length - conFoto,
+        totalUsuarios: usuarios?.length ?? 0,
+        usuariosConCarrito: new Set(carritos.map((c) => c.usuario_id)).size,
+        totalItemsCarrito: items.reduce((sum, i) => sum + (i.cantidad ?? 0), 0),
+        logsHoy,
       })
 
-      setRecentProducts(recentProductsData || [])
-
+      setRecentProducts((recentProducts ?? []).slice(0, 5))
     } catch (error) {
-      console.error('Error loading dashboard data:', error)
+      console.error("Error loading dashboard data:", error)
     } finally {
       setIsLoading(false)
     }
   }
 
-  // Evitar hidratación incorrecta mostrando contenido solo después del mount
   if (!isMounted || isLoading) {
     return <LoadingSpinner />
   }
 
+  const pctActivos =
+    stats.totalProductos > 0
+      ? Math.round((stats.productosActivos / stats.totalProductos) * 100)
+      : 0
+
+  const pctConFoto =
+    stats.totalProductos > 0
+      ? Math.round((stats.productosConFoto / stats.totalProductos) * 100)
+      : 0
+
   return (
-    <div className="space-y-6 md:space-y-8 p-4 md:p-0">
-      {/* Header */}
-      <div className="flex flex-col space-y-4 md:flex-row md:justify-between md:items-center md:space-y-0">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Panel de Administración</h1>
-          <p className="text-gray-600 mt-1 md:mt-2 text-sm md:text-base">Gestiona tu tienda de jeans desde aquí</p>
+    <div className="space-y-8">
+      {/* KPIs con donas */}
+      <section>
+        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-500">
+          Indicadores clave
+        </h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <DonutKpi
+            title="Catálogo activo"
+            value={pctActivos}
+            subtitle="% publicados"
+            segments={[
+              { value: stats.productosActivos, color: "#059669", label: "Activos" },
+              { value: stats.productosInactivos, color: "#e2e8f0", label: "Inactivos" },
+            ]}
+          />
+
+          <DonutKpi
+            title="Total productos"
+            value={stats.totalProductos}
+            subtitle="en inventario"
+            segments={[
+              { value: stats.productosActivos, color: "#0f172a", label: "Activos" },
+              { value: stats.productosInactivos, color: "#94a3b8", label: "Inactivos" },
+            ]}
+          />
+
+          <DonutKpi
+            title="Fotos de producto"
+            value={pctConFoto}
+            subtitle="% con imagen"
+            segments={[
+              { value: stats.productosConFoto, color: "#2563eb", label: "Con foto" },
+              { value: stats.productosSinFoto, color: "#e2e8f0", label: "Sin foto" },
+            ]}
+          />
+
+          <DonutKpi
+            title="Clientes"
+            value={stats.totalUsuarios}
+            subtitle="registrados"
+            segments={[
+              { value: stats.usuariosConCarrito, color: "#7c3aed", label: "Con carrito" },
+              {
+                value: Math.max(0, stats.totalUsuarios - stats.usuariosConCarrito),
+                color: "#e2e8f0",
+                label: "Sin carrito",
+              },
+            ]}
+          />
         </div>
-        
-        <div className="flex flex-col space-y-3 md:flex-row md:items-center md:space-y-0 md:space-x-4">
-          <Link href="/" className="flex items-center space-x-2 text-gray-700 hover:text-gray-900 text-sm md:text-base">
-            <Home className="w-4 h-4 md:w-5 md:h-5" />
-            <span className="font-medium">Ver sitio</span>
-          </Link>
-          
-          <div className="flex items-center space-x-2">
-            <div className="h-6 w-6 md:h-8 md:w-8 bg-gray-900 rounded-full flex items-center justify-center">
-              <span className="text-white text-xs md:text-sm font-medium">A</span>
-            </div>
-            <span className="text-gray-700 font-medium text-sm md:text-base">Administrador</span>
+      </section>
+
+      {/* Métricas secundarias */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Card className="flex items-center gap-3 border-slate-200/80 p-4 shadow-sm">
+          <div className="rounded-lg bg-emerald-50 p-2">
+            <ShoppingCart className="h-5 w-5 text-emerald-600" />
           </div>
-          
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={logout}
-            className="flex items-center space-x-2 w-full md:w-auto"
-          >
-            <LogOut className="w-4 h-4" />
-            <span>Cerrar Sesión</span>
-          </Button>
-        </div>
+          <div>
+            <p className="text-[11px] font-medium uppercase text-slate-500">En carritos</p>
+            <p className="text-xl font-bold text-slate-900">{stats.totalItemsCarrito}</p>
+          </div>
+        </Card>
+        <Card className="flex items-center gap-3 border-slate-200/80 p-4 shadow-sm">
+          <div className="rounded-lg bg-violet-50 p-2">
+            <Package className="h-5 w-5 text-violet-600" />
+          </div>
+          <div>
+            <p className="text-[11px] font-medium uppercase text-slate-500">Activos</p>
+            <p className="text-xl font-bold text-slate-900">{stats.productosActivos}</p>
+          </div>
+        </Card>
+        <Card className="flex items-center gap-3 border-slate-200/80 p-4 shadow-sm">
+          <div className="rounded-lg bg-blue-50 p-2">
+            <ImageIcon className="h-5 w-5 text-blue-600" />
+          </div>
+          <div>
+            <p className="text-[11px] font-medium uppercase text-slate-500">Con foto</p>
+            <p className="text-xl font-bold text-slate-900">{stats.productosConFoto}</p>
+          </div>
+        </Card>
+        <Card className="flex items-center gap-3 border-slate-200/80 p-4 shadow-sm">
+          <div className="rounded-lg bg-amber-50 p-2">
+            <Activity className="h-5 w-5 text-amber-600" />
+          </div>
+          <div>
+            <p className="text-[11px] font-medium uppercase text-slate-500">Logs hoy</p>
+            <p className="text-xl font-bold text-slate-900">{stats.logsHoy}</p>
+          </div>
+        </Card>
       </div>
 
-      {/* Estadísticas */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-        <Card className="p-4 md:p-6">
-          <div className="flex items-center">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Package className="w-5 h-5 md:w-6 md:h-6 text-blue-600" />
-            </div>
-            <div className="ml-3 md:ml-4">
-              <p className="text-xs md:text-sm font-medium text-gray-600">Total Productos</p>
-              <p className="text-lg md:text-2xl font-bold text-gray-900">{stats.totalProductos}</p>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-4 md:p-6">
-          <div className="flex items-center">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <Package className="w-5 h-5 md:w-6 md:h-6 text-green-600" />
-            </div>
-            <div className="ml-3 md:ml-4">
-              <p className="text-xs md:text-sm font-medium text-gray-600">Productos Activos</p>
-              <p className="text-lg md:text-2xl font-bold text-gray-900">{stats.productosActivos}</p>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-4 md:p-6">
-          <div className="flex items-center">
-            <div className="p-2 bg-red-100 rounded-lg">
-              <Package className="w-5 h-5 md:w-6 md:h-6 text-red-600" />
-            </div>
-            <div className="ml-3 md:ml-4">
-              <p className="text-xs md:text-sm font-medium text-gray-600">Productos Inactivos</p>
-              <p className="text-lg md:text-2xl font-bold text-gray-900">{stats.productosInactivos}</p>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-4 md:p-6">
-          <div className="flex items-center">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <Users className="w-5 h-5 md:w-6 md:h-6 text-purple-600" />
-            </div>
-            <div className="ml-3 md:ml-4">
-              <p className="text-xs md:text-sm font-medium text-gray-600">Usuarios Registrados</p>
-              <p className="text-lg md:text-2xl font-bold text-gray-900">{stats.totalUsuarios}</p>
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      {/* Acciones rápidas */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-        <Card className="p-4 md:p-6">
-          <h3 className="text-base md:text-lg font-semibold mb-3 md:mb-4">Acciones Rápidas</h3>
-          <div className="space-y-2 md:space-y-3">
+      {/* Acciones + recientes */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <Card className="border-slate-200/80 p-6 shadow-sm">
+          <h3 className="mb-4 text-base font-semibold text-slate-900">Acciones rápidas</h3>
+          <div className="grid gap-2 sm:grid-cols-2">
             <Link href="/admin/create">
-              <Button className="w-full justify-start text-sm md:text-base">
-                <Plus className="w-4 h-4 mr-2" />
-                Crear Nuevo Producto
+              <Button className="h-11 w-full justify-start gap-2">
+                <Plus className="h-4 w-4" />
+                Crear producto
               </Button>
             </Link>
-            
             <Link href="/admin/products">
-              <Button variant="outline" className="w-full justify-start text-sm md:text-base">
-                <Package className="w-4 h-4 mr-2" />
-                Gestionar Productos
+              <Button variant="outline" className="h-11 w-full justify-start gap-2 border-slate-200">
+                <Package className="h-4 w-4" />
+                Ver catálogo
               </Button>
             </Link>
-            
             <Link href="/admin/administradores">
-              <Button variant="outline" className="w-full justify-start text-sm md:text-base">
-                <Settings className="w-4 h-4 mr-2" />
-                Gestionar Administradores
+              <Button variant="outline" className="h-11 w-full justify-start gap-2 border-slate-200">
+                Gestionar admins
               </Button>
             </Link>
-            
             <Link href="/admin/logs">
-              <Button variant="outline" className="w-full justify-start text-sm md:text-base">
-                <FileText className="w-4 h-4 mr-2" />
-                Ver Logs de Actividad
+              <Button variant="outline" className="h-11 w-full justify-start gap-2 border-slate-200">
+                Ver actividad
               </Button>
             </Link>
           </div>
         </Card>
 
-        <Card className="p-4 md:p-6">
-          <h3 className="text-base md:text-lg font-semibold mb-3 md:mb-4">Productos Recientes</h3>
+        <Card className="border-slate-200/80 p-6 shadow-sm">
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-base font-semibold text-slate-900">Últimos productos</h3>
+            <Link href="/admin/products" className="text-xs font-medium text-emerald-700 hover:underline">
+              Ver todos
+            </Link>
+          </div>
           {recentProducts.length === 0 ? (
-            <p className="text-gray-500 text-xs md:text-sm">No hay productos creados aún</p>
+            <p className="text-sm text-slate-500">Aún no hay productos. Crea el primero.</p>
           ) : (
-            <div className="space-y-2 md:space-y-3">
+            <ul className="space-y-2">
               {recentProducts.map((producto) => (
-                <div key={producto.id} className="flex items-center justify-between p-2 md:p-3 bg-gray-50 rounded-lg">
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-xs md:text-sm truncate">{producto.nombre}</p>
-                    <div className="flex items-center space-x-1 md:space-x-2 mt-1">
-                      <Badge variant={producto.estado === 'activo' ? 'default' : 'secondary'} className="text-xs">
+                <li
+                  key={producto.id}
+                  className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-2.5"
+                >
+                  <div className="min-w-0 flex-1 pr-2">
+                    <p className="truncate text-sm font-medium text-slate-900">{producto.nombre}</p>
+                    <div className="mt-0.5 flex items-center gap-2">
+                      <Badge
+                        variant={producto.estado === "activo" ? "default" : "secondary"}
+                        className="text-[10px]"
+                      >
                         {producto.estado}
                       </Badge>
-                      <span className="text-xs text-gray-500">
-                        S/ {producto.precio || 'No definido'}
+                      <span className="text-xs text-slate-500">
+                        S/ {producto.precio ?? "—"}
                       </span>
                     </div>
                   </div>
-                  <div className="flex space-x-1 ml-2">
-                    <Link href={`/admin/edit/${producto.id}`}>
-                      <Button variant="outline" size="sm" className="p-1 md:p-2">
-                        <Edit className="w-3 h-3" />
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
+                  <Link href={`/admin/edit/${producto.id}`}>
+                    <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+                      <Edit className="h-3.5 w-3.5" />
+                    </Button>
+                  </Link>
+                </li>
               ))}
-            </div>
+            </ul>
           )}
         </Card>
       </div>

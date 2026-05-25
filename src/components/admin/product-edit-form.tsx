@@ -7,7 +7,8 @@ import { Label } from '@/components/ui/label'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { LoadingSpinner } from '@/components/ui/loading-spinner'
-import { X, Plus, LogOut, ArrowLeft } from 'lucide-react'
+import { X, Plus, ArrowLeft } from 'lucide-react'
+import { adminQuery } from '@/lib/admin-api'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/auth-context'
 import { uploadFileWithUniqueName, extractStoragePath, deleteFilesFromStorage } from '@/lib/storage-utils'
@@ -41,7 +42,6 @@ interface ExistingData {
 const TALLAS_DISPONIBLES = ['26', '28', '30', '32', '34']
 
 export function ProductEditForm({ productId }: { productId: string }) {
-  const { logout } = useAuth()
   const { success, error, ToastContainer } = useToast()
   const { showConfirm, ConfirmDialogComponent } = useConfirmDialog()
   const [formData, setFormData] = useState<ProductFormData>({
@@ -66,33 +66,42 @@ export function ProductEditForm({ productId }: { productId: string }) {
   const loadProductData = useCallback(async () => {
     try {
       // Cargar datos del producto
-      const { data: producto, error: productoError } = await supabase
-        .from('productos')
-        .select(`
-          *,
-          colores (
-            id,
-            nombre,
-            hex,
-            fotos_color (id, url)
-          ),
-          tallas (id, talla, en_stock),
-          fotos_medidas (id, url)
-        `)
-        .eq('id', productId)
-        .single()
+      const producto = await adminQuery<{
+        id: string
+        nombre: string
+        precio?: number
+        precio_mayor?: number
+        estado: string
+        colores: { id: string; nombre: string; hex: string; fotos_color: { id: string; url: string }[] }[]
+        tallas: { id: string; talla: string; en_stock: boolean }[]
+        fotos_medidas: { id: string; url: string }[]
+      }>({
+        op: 'select',
+        table: 'productos',
+        select: `*, colores (id, nombre, hex, fotos_color (id, url)), tallas (id, talla, en_stock), fotos_medidas (id, url)`,
+        match: { id: productId },
+        single: true,
+      })
 
-      if (productoError) throw productoError
-
-      // Cargar imágenes existentes
       const existingImages: string[] = []
-      producto.colores.forEach((color: { fotos_color: { url: string }[] }) => {
-        color.fotos_color.forEach((foto: { url: string }) => {
+      producto.colores.forEach((color) => {
+        color.fotos_color.forEach((foto) => {
           existingImages.push(foto.url)
         })
       })
 
-      setExistingData(producto)
+      setExistingData({
+        producto: {
+          id: producto.id,
+          nombre: producto.nombre,
+          precio: producto.precio,
+          precio_mayor: producto.precio_mayor,
+          estado: producto.estado,
+        },
+        colores: producto.colores,
+        tallas: producto.tallas,
+        fotosMedidas: producto.fotos_medidas,
+      })
       setExistingImages(existingImages)
 
       // Llenar el formulario con los datos existentes
@@ -206,20 +215,17 @@ export function ProductEditForm({ productId }: { productId: string }) {
 
     try {
       // Eliminar de la base de datos
-      const { error } = await supabase
-        .from('fotos_color')
-        .delete()
-        .eq('id', fotoId)
+      await adminQuery({
+        op: 'delete',
+        table: 'fotos_color',
+        match: { id: fotoId },
+      })
 
-      if (error) throw error
-
-      // Eliminar archivo del storage
       const path = extractStoragePath(fotoUrl)
       if (path) {
         await deleteFilesFromStorage(supabase, 'productos', [path])
       }
 
-      // Actualizar estado local - recargar datos del producto
       await loadProductData()
 
       success('Foto eliminada', 'La foto ha sido eliminada exitosamente')
@@ -242,14 +248,12 @@ export function ProductEditForm({ productId }: { productId: string }) {
 
     try {
       // Eliminar de la base de datos
-      const { error } = await supabase
-        .from('fotos_medidas')
-        .delete()
-        .eq('id', fotoId)
+      await adminQuery({
+        op: 'delete',
+        table: 'fotos_medidas',
+        match: { id: fotoId },
+      })
 
-      if (error) throw error
-
-      // Eliminar archivo del storage
       const path = extractStoragePath(fotoUrl)
       if (path) {
         await deleteFilesFromStorage(supabase, 'productos', [path])
@@ -295,55 +299,55 @@ export function ProductEditForm({ productId }: { productId: string }) {
         updateData.foto_principal = fotoPrincipalUrl
       }
 
-      const { error: productoError } = await supabase
-        .from('productos')
-        .update(updateData)
-        .eq('id', productId)
-
-      if (productoError) throw productoError
+      await adminQuery({
+        op: 'update',
+        table: 'productos',
+        data: updateData,
+        match: { id: productId },
+      })
 
       // 3. Actualizar tallas
-      // Primero eliminar tallas existentes
-      await supabase
-        .from('tallas')
-        .delete()
-        .eq('producto_id', productId)
+      await adminQuery({
+        op: 'delete',
+        table: 'tallas',
+        match: { producto_id: productId },
+      })
 
-      // Crear nuevas tallas
       const tallasData = formData.tallas.map(talla => ({
         producto_id: productId,
         talla,
         en_stock: true
       }))
 
-      const { error: tallasError } = await supabase
-        .from('tallas')
-        .insert(tallasData)
-
-      if (tallasError) throw tallasError
+      await adminQuery({
+        op: 'insert',
+        table: 'tallas',
+        data: tallasData,
+      })
 
       // 4. Actualizar colores
-      // Primero eliminar colores existentes (esto también eliminará las fotos)
-      await supabase
-        .from('colores')
-        .delete()
-        .eq('producto_id', productId)
+      await adminQuery({
+        op: 'delete',
+        table: 'colores',
+        match: { producto_id: productId },
+      })
 
       // Crear nuevos colores
       for (let i = 0; i < formData.colores.length; i++) {
         const color = formData.colores[i]
         
-        const { data: colorData, error: colorError } = await supabase
-          .from('colores')
-          .insert({
+        const colorRows = await adminQuery<{ id: string }[]>({
+          op: 'insert',
+          table: 'colores',
+          data: {
             producto_id: productId,
             nombre: color,
-            hex: '#000000'
-          })
-          .select()
-          .single()
-
-        if (colorError) throw colorError
+            hex: '#000000',
+          },
+          select: '*',
+        })
+        const colorData = colorRows[0]
+        if (!colorData) throw new Error(`Error creando color ${color}`)
 
         // Subir fotos específicas del color
         const fotosColorData = []
@@ -389,34 +393,34 @@ export function ProductEditForm({ productId }: { productId: string }) {
         }
 
         if (fotosColorData.length > 0) {
-          const { error: fotosError } = await supabase
-            .from('fotos_color')
-            .insert(fotosColorData)
-
-          if (fotosError) throw fotosError
+          await adminQuery({
+            op: 'insert',
+            table: 'fotos_color',
+            data: fotosColorData,
+          })
         }
       }
 
       // 5. Actualizar foto de medidas si hay una nueva
       if (formData.fotoMedidas) {
         // Eliminar foto de medidas existente
-        await supabase
-          .from('fotos_medidas')
-          .delete()
-          .eq('producto_id', productId)
+        await adminQuery({
+          op: 'delete',
+          table: 'fotos_medidas',
+          match: { producto_id: productId },
+        })
 
-        // Subir nueva foto de medidas
         const fileName = `${productId}/medidas-${formData.fotoMedidas.name}`
         const url = await uploadImage(formData.fotoMedidas, fileName)
         
-        const { error: medidasError } = await supabase
-          .from('fotos_medidas')
-          .insert({
+        await adminQuery({
+          op: 'insert',
+          table: 'fotos_medidas',
+          data: {
             producto_id: productId,
-            url
-          })
-
-        if (medidasError) throw medidasError
+            url,
+          },
+        })
       }
 
       success('¡Producto actualizado exitosamente!', `El producto "${formData.nombre}" ha sido actualizado correctamente.`)
@@ -438,38 +442,19 @@ export function ProductEditForm({ productId }: { productId: string }) {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      {/* Header con navegación */}
-      <div className="mb-6 flex justify-between items-center">
-        <div className="flex items-center space-x-4">
-          <Link href="/admin/products" className="flex items-center space-x-2 text-gray-700 hover:text-gray-900">
-            <ArrowLeft className="w-5 h-5" />
-            <span className="font-medium">Volver a productos</span>
-          </Link>
-        </div>
-        
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2">
-            <div className="h-8 w-8 bg-gray-900 rounded-full flex items-center justify-center">
-              <span className="text-white text-sm font-medium">A</span>
-            </div>
-            <span className="text-gray-700 font-medium">Administrador</span>
-          </div>
-          
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={logout}
-            className="flex items-center space-x-2"
-          >
-            <LogOut className="w-4 h-4" />
-            <span>Cerrar Sesión</span>
-          </Button>
-        </div>
-      </div>
+    <div>
+      <Link
+        href="/admin/products"
+        className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Volver a productos
+      </Link>
 
-      <Card className="p-6">
-        <h2 className="text-2xl font-bold mb-6">Editar Producto: {existingData?.producto?.nombre}</h2>
+      <Card className="border-slate-200/80 p-6 shadow-sm">
+        <h2 className="mb-6 text-xl font-bold text-slate-900">
+          Editar: {existingData?.producto?.nombre}
+        </h2>
         
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Estado del producto */}
