@@ -70,15 +70,25 @@ function HomePageContent() {
           
           <div className="flex justify-center">
             <div className="relative w-full max-w-4xl">
-              <video
-                src="/video-1-excusas.mp4"
-                autoPlay
-                loop
-                muted
-                playsInline
-                className="w-full aspect-[4/3] object-cover rounded-lg shadow-lg"
-                style={{ pointerEvents: 'none' }}
-              />
+              {process.env.NEXT_PUBLIC_HERO_VIDEO_URL ? (
+                <video
+                  src={process.env.NEXT_PUBLIC_HERO_VIDEO_URL}
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  className="w-full aspect-[4/3] object-cover rounded-lg shadow-lg"
+                  style={{ pointerEvents: 'none' }}
+                />
+              ) : (
+                <Image
+                  src="/hero1.png"
+                  alt="Excusas Jeans"
+                  width={1200}
+                  height={900}
+                  className="w-full aspect-[4/3] object-cover rounded-lg shadow-lg"
+                />
+              )}
             </div>
           </div>
           

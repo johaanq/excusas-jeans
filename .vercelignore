@@ -1,0 +1,7 @@
+*.mp4
+assets-local/
+.agents/
+.cursor/
+docs/
+insforge-security-fix*.sql
+insforge-schema.sql

@@ -1,0 +1,11 @@
+*.mp4
+assets-local/
+.agents/
+.cursor/
+.idea/
+docs/
+*.md
+!README.md
+insforge-security-fix*.sql
+insforge-schema.sql
+skills-lock.json
