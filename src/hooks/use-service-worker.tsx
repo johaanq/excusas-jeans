@@ -25,6 +25,15 @@ export function useServiceWorker(): ServiceWorkerState {
     setState(prev => ({ ...prev, isSupported: true }))
 
     const registerServiceWorker = async () => {
+      // En desarrollo: desregistrar SW antiguo (causaba 500 en /login y errores de cache)
+      if (process.env.NODE_ENV === 'development') {
+        const registrations = await navigator.serviceWorker.getRegistrations()
+        await Promise.all(registrations.map((r) => r.unregister()))
+        const cacheNames = await caches.keys()
+        await Promise.all(cacheNames.map((name) => caches.delete(name)))
+        return
+      }
+
       try {
         const registration = await navigator.serviceWorker.register('/sw.js', {
           scope: '/',

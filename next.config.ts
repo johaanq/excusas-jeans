@@ -6,20 +6,13 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ['lucide-react', '@radix-ui/react-dialog', '@radix-ui/react-label', '@radix-ui/react-slot'],
   },
   
-  // External packages for server components
-  serverExternalPackages: ['@supabase/supabase-js'],
-  
-  // Turbopack configuration - moved from experimental.turbo
+  // Turbopack configuration
   turbopack: {
     rules: {
       '*.svg': {
         loaders: ['@svgr/webpack'],
         as: '*.js',
       },
-    },
-    // Excluir módulos problemáticos de Supabase
-    resolveAlias: {
-      '@supabase/supabase-js': '@supabase/supabase-js/dist/main/index.js',
     },
   },
   
@@ -32,22 +25,10 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: '*.supabase.co',
+        hostname: '*.insforge.app',
         port: '',
-        pathname: '/storage/v1/object/public/**',
+        pathname: '/api/storage/**',
       },
-      {
-        protocol: 'https',
-        hostname: 'qgoawykctoyoxcadrkka.supabase.co',
-        port: '',
-        pathname: '/storage/v1/object/public/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'aafngutjqumozxzejmth.supabase.co',
-        port: '',
-        pathname: '/storage/v1/object/public/**',
-      }
     ],
     formats: ['image/webp', 'image/avif'],
     minimumCacheTTL: 60,
