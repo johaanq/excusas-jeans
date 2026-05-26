@@ -26,7 +26,7 @@ const CartContext = createContext<CartContextType | null>(null)
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([])
-  const { isAuthenticated, addToCart: addToSupabaseCart, carrito } = useUserAuth()
+  const { isAuthenticated, addToCart: addToServerCart, carrito } = useUserAuth()
 
   // Load cart from localStorage on mount (for non-authenticated users)
   useEffect(() => {
@@ -42,10 +42,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }, [isAuthenticated])
 
-  // Load cart from Supabase for authenticated users
   useEffect(() => {
     if (isAuthenticated && carrito?.items) {
-      // Convert Supabase cart items to local cart format
       const convertedItems: CartItem[] = carrito.items
         .filter(item => item.producto && item.color)
         .map((item) => {
@@ -95,9 +93,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const addItem = async (producto: Producto, color: Color, talla: string, cantidad = 1) => {
 
     if (isAuthenticated) {
-      // For authenticated users, add to Supabase cart
       try {
-        await addToSupabaseCart(producto.id, color.id, talla, cantidad)
+        await addToServerCart(producto.id, color.id, talla, cantidad)
         // The cart will be updated via the useEffect that watches carrito
         // Dispatch custom event to notify cart preview
         if (typeof window !== 'undefined') {
@@ -106,7 +103,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           }))
         }
       } catch (error) {
-        console.error('Error adding to Supabase cart:', error)
+        console.error('Error adding to server cart:', error)
         alert('Error al agregar al carrito')
       }
     } else {

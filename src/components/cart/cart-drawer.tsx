@@ -3,9 +3,11 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
-import { ShoppingBag, Plus, Minus, Trash2, MessageCircle } from "lucide-react"
+import { ShoppingBag, Plus, Minus, Trash2, MessageCircle, CreditCard } from "lucide-react"
+import Link from "next/link"
 import { useCart } from "@/hooks/use-cart"
 import { generateWhatsAppMessage, openWhatsApp } from "@/lib/utils"
+import { WHATSAPP_NUMBER_E164 } from "@/lib/site"
 import Image from "next/image"
 import { useUserAuth } from "@/contexts/user-auth-context"
 
@@ -41,7 +43,7 @@ export function CartDrawer({ isOpen: externalIsOpen, onOpenChange }: CartDrawerP
     } : undefined
 
     const message = generateWhatsAppMessage(items, customerInfo)
-    await openWhatsApp('51934762253', message)
+    await openWhatsApp(WHATSAPP_NUMBER_E164, message)
     clearCart()
     setIsOpen(false)
   }
@@ -138,9 +140,20 @@ export function CartDrawer({ isOpen: externalIsOpen, onOpenChange }: CartDrawerP
                   <span className="text-base sm:text-lg font-bold text-primary">S/{getTotalPrice().toFixed(2)}</span>
                 </div>
 
-                <Button onClick={handleWhatsAppOrder} className="w-full bg-green-500 hover:bg-green-600" size="lg">
+                <Button asChild className="w-full" size="lg">
+                  <Link href="/checkout" onClick={() => setIsOpen(false)}>
+                    <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+                    <span className="text-sm sm:text-base">Pagar en línea</span>
+                  </Link>
+                </Button>
+                <Button
+                  onClick={handleWhatsAppOrder}
+                  variant="outline"
+                  className="w-full"
+                  size="lg"
+                >
                   <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                  <span className="text-sm sm:text-base">Pedir por WhatsApp</span>
+                  <span className="text-sm sm:text-base">Consultar por WhatsApp</span>
                 </Button>
               </div>
             </>

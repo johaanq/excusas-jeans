@@ -27,7 +27,7 @@ export const NavigationArrows = memo(function NavigationArrows({
         size="sm"
         onClick={scrollLeft}
         disabled={!canScrollLeft}
-        className="bg-white shadow-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="border-stone-300 bg-white shadow-sm hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-50"
       >
         <ChevronLeft className="w-4 h-4" />
       </Button>
@@ -36,7 +36,7 @@ export const NavigationArrows = memo(function NavigationArrows({
         size="sm"
         onClick={scrollRight}
         disabled={!canScrollRight}
-        className="bg-white shadow-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="border-stone-300 bg-white shadow-sm hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-50"
       >
         <ChevronRight className="w-4 h-4" />
       </Button>
@@ -116,7 +116,7 @@ export function HorizontalProductCarousel({ productos, isLoading, error }: Horiz
       {/* Contenedor de scroll */}
       <div
         ref={scrollContainerRef}
-        className="flex gap-4 overflow-hidden pb-4"
+        className="-mx-1 flex gap-4 overflow-x-auto overflow-y-hidden pb-4 pl-1 pr-1 scrollbar-hide"
         onScroll={checkScrollButtons}
       >
         {productos.map((producto, index) => {

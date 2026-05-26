@@ -4,26 +4,33 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Updated color palette to match e-commerce design brief */
-  --background: oklch(1 0 0); /* Pure white */
-  --foreground: oklch(0.35 0 0); /* Dark gray for text */
-  --card: oklch(0.97 0 0); /* Light gray for cards */
-  --card-foreground: oklch(0.35 0 0);
+  /* Excusas Jeans — denim + arena (tienda) */
+  --store-bg: #faf9f7;
+  --store-ink: #1c1917;
+  --store-muted: #78716c;
+  --store-border: #e7e5e4;
+  --store-denim: #3d5a73;
+  --store-denim-dark: #2f4858;
+
+  --background: oklch(0.99 0.004 85);
+  --foreground: oklch(0.28 0.01 55);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.28 0.01 55);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.35 0 0);
-  --primary: oklch(0.45 0.15 160); /* Emerald green */
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.55 0.12 160); /* Lighter emerald */
-  --secondary-foreground: oklch(1 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.45 0 0);
-  --accent: oklch(0.55 0.12 160);
-  --accent-foreground: oklch(1 0 0);
+  --popover-foreground: oklch(0.28 0.01 55);
+  --primary: oklch(0.42 0.06 240);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.94 0.01 85);
+  --secondary-foreground: oklch(0.32 0.02 55);
+  --muted: oklch(0.96 0.006 85);
+  --muted-foreground: oklch(0.52 0.02 55);
+  --accent: oklch(0.42 0.06 240);
+  --accent-foreground: oklch(0.99 0 0);
   --destructive: oklch(0.55 0.22 25);
   --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.9 0 0);
+  --border: oklch(0.9 0.006 85);
   --input: oklch(1 0 0);
-  --ring: oklch(0.45 0.15 160 / 0.5);
+  --ring: oklch(0.42 0.06 240 / 0.45);
   --chart-1: oklch(0.45 0.15 160);
   --chart-2: oklch(0.55 0.12 160);
   --chart-3: oklch(0.4 0 0);
@@ -76,7 +83,7 @@
 }
 
 @theme inline {
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-brand), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -341,7 +348,121 @@
   }
 
   .header-scrolled .hover\\:text-green-200:hover {
-    color: rgb(34, 197, 94) !important;
+    color: rgb(74, 222, 128) !important;
+  }
+
+  /* Búsqueda, carrito y cuenta: hover suave (sin fondo verde de ghost/accent) */
+  #main-header button.h-10.w-10:hover {
+    background-color: rgba(255, 255, 255, 0.14) !important;
+    color: inherit !important;
+  }
+
+  #main-header.header-scrolled button.h-10.w-10:hover {
+    background-color: rgba(17, 24, 39, 0.07) !important;
+    color: inherit !important;
+  }
+
+  /* ——— Sistema visual tienda Excusas ——— */
+  .store-container {
+    @apply mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8;
+  }
+
+  /** Home: un poco más ancho que store-container, sin llegar al borde */
+  .store-container-home {
+    @apply mx-auto w-full max-w-[1480px] px-4 sm:px-5 md:px-6 lg:px-7 xl:px-9;
+  }
+
+  .store-container-wide {
+    @apply mx-auto w-full max-w-[1400px] px-4 sm:px-6 lg:px-10;
+  }
+
+  /** Catálogo: máximo ancho útil en pantallas grandes */
+  .store-container-catalog {
+    @apply mx-auto w-full max-w-[1760px] px-4 sm:px-6 md:px-10 lg:px-12 xl:px-14 2xl:px-16;
+  }
+
+  .catalog-grid {
+    @apply grid grid-cols-2 gap-x-4 gap-y-10 sm:grid-cols-3 sm:gap-x-5 sm:gap-y-12 lg:grid-cols-4 lg:gap-x-6 lg:gap-y-14;
+  }
+
+  .catalog-card-image {
+    @apply relative aspect-[4/5] w-full overflow-hidden bg-stone-100;
+  }
+
+  .catalog-card-name {
+    @apply text-[11px] font-medium uppercase leading-snug tracking-[0.1em] text-stone-900 sm:text-xs;
+  }
+
+  .catalog-card-price {
+    @apply text-xs font-semibold tabular-nums tracking-wide text-stone-800 sm:text-sm;
+  }
+
+  .store-kicker {
+    @apply text-sm font-medium text-stone-500;
+  }
+
+  .store-title {
+    @apply text-2xl font-semibold tracking-tight text-stone-900 sm:text-3xl;
+  }
+
+  .store-lead {
+    @apply text-sm leading-relaxed text-stone-600 sm:text-base;
+  }
+
+  .store-label {
+    @apply text-sm font-medium text-stone-800;
+  }
+
+  .store-meta {
+    @apply text-xs text-stone-500;
+  }
+
+  .store-price {
+    @apply text-sm font-semibold tabular-nums text-stone-900;
+  }
+
+  .store-price-lg {
+    @apply text-xl font-semibold tabular-nums tracking-tight text-stone-900 sm:text-2xl;
+  }
+
+  .store-divider {
+    @apply border-t border-stone-200;
+  }
+
+  .store-section {
+    @apply mt-6 border-t border-stone-200 pt-6;
+  }
+
+  .store-breadcrumb {
+    @apply flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm text-stone-500;
+  }
+
+  .store-chip {
+    @apply border border-stone-300 bg-white px-3 py-2 text-sm text-stone-800 transition-colors hover:border-stone-800;
+  }
+
+  .store-chip-active {
+    @apply border-stone-900 bg-stone-900 text-white hover:border-stone-900;
+  }
+
+  .store-btn-primary {
+    @apply inline-flex h-11 w-full items-center justify-center rounded-md bg-[var(--store-denim-dark)] text-sm font-medium text-white transition-colors hover:bg-[var(--store-denim)];
+  }
+
+  .store-link {
+    @apply text-sm text-stone-600 underline-offset-4 transition-colors hover:text-stone-900 hover:underline;
+  }
+
+  .store-accordion-trigger {
+    @apply flex w-full items-center justify-between text-left text-sm font-medium text-stone-900;
+  }
+
+  .store-type-name {
+    @apply mt-2 text-sm font-medium leading-snug text-stone-900;
+  }
+
+  .store-type-price {
+    @apply mt-1 text-sm tabular-nums text-stone-600;
   }
 }
 

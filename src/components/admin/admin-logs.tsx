@@ -5,10 +5,11 @@ import { useAdminLogs } from '@/hooks/use-admin-logs'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
 import { LoadingSpinner } from '@/components/ui/loading-spinner'
 import { Alert } from '@/components/ui/alert'
-import { Search, Filter, RefreshCw, Download } from 'lucide-react'
+import { RefreshCw, Download } from "lucide-react"
+import { AdminActionBadge } from "@/components/admin/admin-action-badge"
+import { getAdminActionLabel } from "@/lib/admin-actions"
 
 export function AdminLogs() {
   const {
@@ -17,8 +18,6 @@ export function AdminLogs() {
     error,
     totalCount,
     fetchLogs,
-    getActionIcon,
-    getActionColor,
     formatDate
   } = useAdminLogs()
 
@@ -53,7 +52,7 @@ export function AdminLogs() {
       ...logs.map(log => [
         formatDate(log.created_at),
         `"${log.admin_nombre} (@${log.admin_username})"`,
-        `"${log.action}"`,
+        `"${getAdminActionLabel(log.action)}"`,
         `"${log.description || ''}"`,
         `"${log.resource_type || ''}"`,
         `"${log.ip_address || ''}"`,
@@ -117,7 +116,7 @@ export function AdminLogs() {
               Filtrar por acción
             </label>
             <Input
-              placeholder="Ej: login, create_producto..."
+              placeholder="Ej: Inicio de sesión, Crear producto..."
               value={filters.action}
               onChange={(e) => handleFilterChange('action', e.target.value)}
             />
@@ -198,10 +197,7 @@ export function AdminLogs() {
                     </div>
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap">
-                    <Badge className={`${getActionColor(log.action)} border-0`}>
-                      <span className="mr-1">{getActionIcon(log.action)}</span>
-                      {log.action}
-                    </Badge>
+                    <AdminActionBadge action={log.action} />
                   </td>
                   <td className="px-4 py-4 text-sm text-gray-900 max-w-xs">
                     <div className="truncate" title={log.description || ''}>

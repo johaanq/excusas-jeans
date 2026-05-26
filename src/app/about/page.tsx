@@ -1,6 +1,8 @@
 import { Header } from "@/components/header"
+import { Footer } from "@/components/footer"
 import { Suspense, memo } from "react"
 import { CheckCircle, Heart, Award, Users, Star } from "lucide-react"
+import { WHATSAPP_URL } from "@/lib/site"
 
 // Componente memoizado para el hero
 const HeroSection = memo(function HeroSection() {
@@ -19,7 +21,7 @@ const HeroSection = memo(function HeroSection() {
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[var(--store-bg)]">
       <Suspense fallback={
         <div className="h-20 bg-white/95 backdrop-blur-md border-b border-gray-200 animate-pulse"></div>
       }>
@@ -29,13 +31,18 @@ export default function AboutPage() {
       <HeroSection />
 
       {/* Contenido principal */}
-      <main className="container mx-auto px-4 py-8 md:py-16">
-        <div className="max-w-4xl mx-auto">
+      <main className="store-container py-8 md:py-16">
+        <div className="mx-auto max-w-4xl">
+          <p className="store-kicker">Excusas Jeans</p>
+          <h1 className="store-title mt-1">Sobre nosotros</h1>
+          <p className="store-lead mt-3 mb-10 md:mb-14">
+            Denim de Gamarra, hecho para vender y para lucir bien en tu negocio.
+          </p>
           {/* Historia */}
           <section className="mb-8 sm:mb-12 md:mb-16">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 md:gap-8 lg:gap-12 items-center">
               <div className="animate-fade-in-left">
-                <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-gray-900 mb-2 sm:mb-3 md:mb-4 lg:mb-6">Nuestra Historia</h2>
+                <h2 className="store-title text-xl sm:text-2xl mb-2 sm:mb-3 md:mb-4 lg:mb-6">Nuestra historia</h2>
                 <div className="space-y-2 sm:space-y-3 md:space-y-4">
                   <p className="text-gray-600 leading-relaxed text-xs sm:text-sm md:text-base">
                     Excusas Jeans nació de la pasión por crear jeans únicos que reflejen la personalidad de cada persona. 
@@ -175,7 +182,7 @@ export default function AboutPage() {
               Estamos aquí para ayudarte. Contáctanos por WhatsApp y te responderemos al instante.
             </p>
             <a 
-              href="https://wa.me/51934762253" 
+              href={WHATSAPP_URL} 
               target="_blank" 
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 bg-green-500 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold hover:bg-green-600 transition-colors text-sm sm:text-base"
@@ -189,13 +196,7 @@ export default function AboutPage() {
         </div>
       </main>
       
-      <footer className="bg-gray-900 text-white mt-8 sm:mt-12 md:mt-16">
-        <div className="container mx-auto px-4 py-4 sm:py-6 md:py-8">
-          <div className="border-t border-gray-700 mt-3 sm:mt-4 md:mt-6 pt-3 sm:pt-4 md:pt-6 text-center text-xs sm:text-sm text-gray-400">
-            <p>&copy; 2024 Excusas Jeans. Todos los derechos reservados.</p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   )
 }

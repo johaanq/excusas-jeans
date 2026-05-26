@@ -4,10 +4,12 @@ import { useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
 import { Header } from "@/components/header"
 import { ProductGrid } from "@/components/product-grid"
+import { StorePage, StorePageHeader } from "@/components/store/store-layout"
 import { useProductos } from "@/hooks/use-productos"
 import { Producto } from "@/data/productos"
-import { Search, ArrowLeft } from "lucide-react"
+import { Search } from "lucide-react"
 import Link from "next/link"
+import { Button } from "@/components/ui/button"
 
 export default function SearchPage() {
   const searchParams = useSearchParams()
@@ -37,46 +39,22 @@ export default function SearchPage() {
   }, [searchTerm, productos])
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[var(--store-bg)]">
       <Header />
 
-      {/* Header de búsqueda */}
-      <div className="bg-gray-50 border-b pt-20 sm:pt-24 md:pt-28">
-        <div className="container mx-auto px-4 py-4 sm:py-6 md:py-8">
-          <div className="flex items-center gap-4 mb-4">
-            <Link 
-              href="/catalogo"
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span className="text-sm">Volver al catálogo</span>
-            </Link>
-          </div>
-          
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
-            <div className="flex-1">
-              <div className="flex items-center gap-3 mb-2">
-                <Search className="w-5 h-5 text-gray-600" />
-                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
-                  Resultados de búsqueda
-                </h1>
-              </div>
-              {searchTerm && (
-                <p className="text-gray-600 text-sm sm:text-base">
-                  {isSearching ? (
-                    "Buscando..."
-                  ) : (
-                    `Mostrando ${filteredProducts.length} resultado${filteredProducts.length !== 1 ? 's' : ''} para "${searchTerm}"`
-                  )}
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Contenido principal */}
-      <main className="container mx-auto px-4 py-6 md:py-8">
+      <main className="pt-20 sm:pt-24 md:pt-28">
+        <StorePage>
+          <StorePageHeader
+            eyebrow="Excusas Jeans"
+            title="Búsqueda"
+            description={
+              !searchTerm.trim()
+                ? "Escribe en la barra superior para encontrar modelos"
+                : isSearching
+                  ? "Buscando…"
+                  : `${filteredProducts.length} resultado${filteredProducts.length !== 1 ? "s" : ""} para “${searchTerm}”`
+            }
+          />
         {!searchTerm.trim() ? (
           <div className="text-center py-12">
             <Search className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -86,12 +64,9 @@ export default function SearchPage() {
             <p className="text-gray-600 mb-6">
               Usa la barra de búsqueda en el header para encontrar productos
             </p>
-            <Link
-              href="/catalogo"
-              className="inline-flex items-center gap-2 bg-gray-900 text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors"
-            >
-              Ver catálogo completo
-            </Link>
+            <Button asChild className="rounded-lg">
+              <Link href="/catalogo">Ver catálogo completo</Link>
+            </Button>
           </div>
         ) : isSearching ? (
           <div className="text-center py-12">
@@ -107,19 +82,18 @@ export default function SearchPage() {
             <p className="text-gray-600 mb-6">
               No hay productos que coincidan con &quot;{searchTerm}&quot;. Intenta con otros términos.
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link
-                href="/catalogo"
-                className="inline-flex items-center gap-2 bg-gray-900 text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors"
-              >
-                Ver catálogo completo
-              </Link>
-              <button
+            <div className="flex flex-col justify-center gap-3 sm:flex-row">
+              <Button asChild className="rounded-lg">
+                <Link href="/catalogo">Ver catálogo completo</Link>
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-lg border-stone-300"
                 onClick={() => window.history.back()}
-                className="inline-flex items-center gap-2 border border-gray-300 text-gray-700 px-6 py-3 rounded-lg font-medium hover:bg-gray-50 transition-colors"
               >
                 Volver
-              </button>
+              </Button>
             </div>
           </div>
         ) : (
@@ -129,6 +103,7 @@ export default function SearchPage() {
             error={undefined}
           />
         )}
+        </StorePage>
       </main>
     </div>
   )

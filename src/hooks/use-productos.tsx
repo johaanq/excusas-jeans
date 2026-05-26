@@ -1,8 +1,9 @@
 "use client"
 
 import { useState, useEffect, useCallback, useMemo } from "react"
-import { supabase } from "@/lib/supabase"
-import type { Producto, SupabaseColor, SupabaseFotoColor, SupabaseTalla, SupabaseFotoMedida } from "@/data/productos"
+import { insforgeClient } from "@/lib/insforge-client"
+import { mapProductoFromRow, PRODUCTOS_ACTIVE_SELECT, type ProductoRow } from "@/lib/producto-db"
+import type { Producto } from "@/data/productos"
 
 interface UseProductosReturn {
   productos: Producto[]
@@ -12,21 +13,20 @@ interface UseProductosReturn {
   featuredProducts: Producto[]
 }
 
-// Cache simple para evitar llamadas innecesarias
 let productosCache: Producto[] | null = null
 let cacheTimestamp: number = 0
-const CACHE_DURATION = 5 * 60 * 1000 // 5 minutos
+const CACHE_DURATION = 5 * 60 * 1000
 
 export function useProductos(): UseProductosReturn {
   const [productos, setProductos] = useState<Producto[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isMounted, setIsMounted] = useState(false)
 
   const fetchProductos = useCallback(async () => {
     try {
-      // Verificar cache primero
       const now = Date.now()
-      if (productosCache && (now - cacheTimestamp) < CACHE_DURATION) {
+      if (productosCache && now - cacheTimestamp < CACHE_DURATION) {
         setProductos(productosCache)
         setIsLoading(false)
         return
@@ -35,63 +35,17 @@ export function useProductos(): UseProductosReturn {
       setIsLoading(true)
       setError(null)
 
-      // Obtener productos activos desde Supabase
-      const { data: productosData, error: productosError } = await supabase
+      const { data: productosData, error: productosError } = await insforgeClient
         .from('productos')
-        .select(`
-          *,
-          colores (
-            *,
-            fotos_color (*)
-          ),
-          tallas (*),
-          fotos_medidas (*)
-        `)
+        .select(PRODUCTOS_ACTIVE_SELECT)
         .eq('estado', 'activo')
         .order('created_at', { ascending: false })
 
       if (productosError) throw productosError
 
-      // Transformar los datos al formato esperado
-      const productosFormateados: Producto[] = productosData?.map(producto => ({
-        id: producto.id,
-        nombre: producto.nombre,
-        slug: producto.slug,
-        descripcion: producto.descripcion || '',
-        precio: producto.precio,
-        precio_mayor: producto.precio_mayor,
-        estado: producto.estado,
-        foto_principal: producto.foto_principal,
-        created_at: producto.created_at,
-        colores: producto.colores?.map((color: SupabaseColor) => ({
-          id: color.id,
-          producto_id: color.producto_id,
-          nombre: color.nombre,
-          hex: color.hex,
-          fotos: color.fotos_color?.map((foto: SupabaseFotoColor) => ({
-            id: foto.id,
-            color_id: foto.color_id,
-            url: foto.url,
-            created_at: foto.created_at
-          })) || [],
-          created_at: color.created_at
-        })) || [],
-        tallas: producto.tallas?.map((talla: SupabaseTalla) => ({
-          id: talla.id,
-          producto_id: talla.producto_id,
-          talla: talla.talla,
-          en_stock: talla.en_stock,
-          created_at: talla.created_at
-        })) || [],
-        fotos_medidas: producto.fotos_medidas?.map((foto: SupabaseFotoMedida) => ({
-          id: foto.id,
-          producto_id: foto.producto_id,
-          url: foto.url,
-          created_at: foto.created_at
-        })) || []
-      })) || []
+      const productosFormateados =
+        productosData?.map((row) => mapProductoFromRow(row as ProductoRow)) ?? []
 
-      // Actualizar cache
       productosCache = productosFormateados
       cacheTimestamp = now
       setProductos(productosFormateados)
@@ -104,17 +58,15 @@ export function useProductos(): UseProductosReturn {
   }, [])
 
   useEffect(() => {
+    setIsMounted(true)
     fetchProductos()
   }, [fetchProductos])
 
-  // Memoizar productos destacados para evitar recálculos
-  const featuredProducts = useMemo(() => {
-    return productos.slice(0, 10) // Mostrar hasta 10 productos destacados
-  }, [productos])
+  const featuredProducts = useMemo(() => productos.slice(0, 10), [productos])
 
   return {
     productos,
-    isLoading,
+    isLoading: !isMounted || isLoading,
     error,
     refetch: fetchProductos,
     featuredProducts,

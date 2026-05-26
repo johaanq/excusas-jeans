@@ -4,6 +4,8 @@ const nextConfig: NextConfig = {
   // Optimizaciones de rendimiento
   experimental: {
     optimizePackageImports: ['lucide-react', '@radix-ui/react-dialog', '@radix-ui/react-label', '@radix-ui/react-slot'],
+    /** Fotos de producto en el panel admin */
+    middlewareClientMaxBodySize: '25mb',
   },
   
   // Turbopack configuration

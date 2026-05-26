@@ -1,9 +1,8 @@
-import { ProductForm } from "@/components/admin/product-form"
+import { redirect } from "next/navigation"
+import { headers } from "next/headers"
+import { getAdminPathFromHeaders } from "@/lib/admin-host"
 
-export default function CreateProductPage() {
-  return (
-    <div className="mx-auto max-w-4xl">
-      <ProductForm />
-    </div>
-  )
+export default async function CreateProductPage() {
+  const adminPath = getAdminPathFromHeaders(await headers())
+  redirect(adminPath("/products"))
 }

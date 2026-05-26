@@ -8,10 +8,10 @@ import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { X, Plus } from 'lucide-react'
 import { adminQuery } from '@/lib/admin-api'
-import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/auth-context'
-import { uploadFileWithUniqueName } from '@/lib/storage-utils'
+import { adminUploadFile } from '@/lib/admin-storage'
 import { useToast } from '@/components/ui/toast'
+import { useAdminPath } from '@/hooks/use-admin-path'
 
 interface ProductFormData {
   nombre: string
@@ -30,18 +30,27 @@ interface ColorWithPhotos {
 
 const TALLAS_DISPONIBLES = ['26', '28', '30', '32', '34']
 
-export function ProductForm() {
+const INITIAL_FORM: ProductFormData = {
+  nombre: '',
+  precioUnitario: '',
+  precioMayor: '',
+  tallas: [],
+  colores: [],
+  fotosProducto: [],
+  fotoMedidas: null,
+}
+
+type ProductFormProps = {
+  embedded?: boolean
+  onSuccess?: () => void
+  onCancel?: () => void
+}
+
+export function ProductForm({ embedded = false, onSuccess, onCancel }: ProductFormProps) {
   const { logAdminAction, adminUser } = useAuth()
   const { success, error, ToastContainer } = useToast()
-  const [formData, setFormData] = useState<ProductFormData>({
-    nombre: '',
-    precioUnitario: '',
-    precioMayor: '',
-    tallas: [],
-    colores: [],
-    fotosProducto: [],
-    fotoMedidas: null
-  })
+  const { adminPath } = useAdminPath()
+  const [formData, setFormData] = useState<ProductFormData>(INITIAL_FORM)
   
   const [colorInput, setColorInput] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -121,7 +130,7 @@ export function ProductForm() {
   }
 
   const uploadImage = async (file: File, path: string): Promise<string> => {
-    return uploadFileWithUniqueName(supabase, 'productos', file, path)
+    return adminUploadFile('productos', file, path)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -307,40 +316,38 @@ export function ProductForm() {
         })
       }
 
-      // Limpiar formulario
-      setFormData({
-        nombre: '',
-        precioUnitario: '',
-        precioMayor: '',
-        tallas: [],
-        colores: [],
-        fotosProducto: [],
-        fotoMedidas: null
-      })
-      
-      // Registrar creación de producto en logs
+      const nombreCreado = formData.nombre
+      const logMeta = {
+        nombre: nombreCreado,
+        precio: formData.precioUnitario,
+        precio_mayor: formData.precioMayor,
+        tallas: formData.tallas,
+        colores: formData.colores,
+      }
+
       if (adminUser) {
         await logAdminAction(
           'create_producto',
-          `Creó nuevo producto: ${formData.nombre}`,
+          `Creó nuevo producto: ${nombreCreado}`,
           'producto',
           producto.id,
-          { 
-            nombre: formData.nombre,
-            precio: formData.precioUnitario,
-            precio_mayor: formData.precioMayor,
-            tallas: formData.tallas,
-            colores: formData.colores
-          }
+          logMeta
         )
       }
 
-      success('¡Producto creado exitosamente!', `El producto "${formData.nombre}" ha sido creado correctamente.`)
-      
-      // Redirigir al dashboard después de un breve delay
-      setTimeout(() => {
-        window.location.href = '/admin'
-      }, 2000)
+      setFormData(INITIAL_FORM)
+      setColoresConFotos([])
+      setColorInput('')
+
+      success('¡Producto creado!', `"${nombreCreado}" se agregó al catálogo.`)
+
+      if (onSuccess) {
+        onSuccess()
+      } else {
+        setTimeout(() => {
+          window.location.href = adminPath('/products')
+        }, 1500)
+      }
 
     } catch (err) {
       console.error('Error creando producto:', err)
@@ -364,11 +371,7 @@ export function ProductForm() {
     }
   }
 
-  return (
-    <div>
-      <Card className="border-slate-200/80 p-6 shadow-sm">
-        <h2 className="mb-6 text-xl font-bold text-slate-900">Datos del producto</h2>
-        
+  const formContent = (
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Nombre del producto */}
           <div>
@@ -588,18 +591,41 @@ export function ProductForm() {
             </div>
           )}
 
-          {/* Botón de envío */}
-          <Button 
-            type="submit" 
-            disabled={isSubmitting || !formData.nombre || !formData.precioUnitario || !formData.precioMayor || formData.tallas.length === 0 || formData.colores.length === 0 || coloresConFotos.some(c => c.fotos.length === 0)}
-            className="w-full"
-          >
-            {isSubmitting ? 'Creando Producto...' : 'Crear Producto'}
-          </Button>
+          <div className={embedded ? "flex flex-col-reverse gap-2 border-t border-slate-100 pt-4 sm:flex-row sm:justify-end" : ""}>
+            {embedded && onCancel && (
+              <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
+                Cancelar
+              </Button>
+            )}
+            <Button
+              type="submit"
+              disabled={
+                isSubmitting ||
+                !formData.nombre ||
+                !formData.precioUnitario ||
+                !formData.precioMayor ||
+                formData.tallas.length === 0 ||
+                formData.colores.length === 0 ||
+                coloresConFotos.some((c) => c.fotos.length === 0)
+              }
+              className={embedded ? "sm:min-w-[160px]" : "w-full"}
+            >
+              {isSubmitting ? "Creando…" : "Crear producto"}
+            </Button>
+          </div>
         </form>
-      </Card>
-      
-      {/* Toast Container */}
+  )
+
+  return (
+    <div>
+      {embedded ? (
+        formContent
+      ) : (
+        <Card className="border-slate-200/80 p-6 shadow-sm">
+          <h2 className="mb-6 text-xl font-bold text-slate-900">Datos del producto</h2>
+          {formContent}
+        </Card>
+      )}
       <ToastContainer />
     </div>
   )

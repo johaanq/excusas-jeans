@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/auth-context'
+import { useAdminPath } from '@/hooks/use-admin-path'
 
 interface AdminGuardProps {
   children: React.ReactNode
@@ -11,6 +12,7 @@ interface AdminGuardProps {
 export function AdminGuard({ children }: AdminGuardProps) {
   const { isAuthenticated, isLoading } = useAuth()
   const router = useRouter()
+  const { adminPath } = useAdminPath()
   const [isMounted, setIsMounted] = useState(false)
 
   useEffect(() => {
@@ -19,9 +21,9 @@ export function AdminGuard({ children }: AdminGuardProps) {
 
   useEffect(() => {
     if (isMounted && !isLoading && !isAuthenticated) {
-      router.push('/login')
+      router.push(adminPath('/login'))
     }
-  }, [isAuthenticated, isLoading, router, isMounted])
+  }, [isAuthenticated, isLoading, router, isMounted, adminPath])
 
   // Show loading state until mounted to prevent hydration mismatch
   if (!isMounted || isLoading) {

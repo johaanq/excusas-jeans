@@ -11,6 +11,7 @@ import { ShoppingCart, Plus, Minus, Trash2, MessageCircle, User, LogIn } from 'l
 import Link from 'next/link'
 import Image from 'next/image'
 import { generateWhatsAppMessage, openWhatsApp } from '@/lib/utils'
+import { WHATSAPP_NUMBER_E164 } from '@/lib/site'
 
 interface CartDrawerEnhancedProps {
   isScrolled?: boolean
@@ -67,8 +68,7 @@ export function CartDrawerEnhanced({ isScrolled = false, isOpen: externalIsOpen,
       const message = generateWhatsAppMessage(items, customerInfo)
       
       // Abrir WhatsApp con la función mejorada
-      const phoneNumber = '51934762253'
-      await openWhatsApp(phoneNumber, message)
+      await openWhatsApp(WHATSAPP_NUMBER_E164, message)
     }, 300)
   }
 

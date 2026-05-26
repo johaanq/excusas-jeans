@@ -131,7 +131,7 @@ src/
 
 ## 📞 Soporte
 
-Para soporte o preguntas, contacta por WhatsApp o email.
+Para soporte o preguntas, contacta por WhatsApp.
 
 ## 📝 Licencia
 

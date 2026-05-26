@@ -1,16 +1,31 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
-import { supabase } from '@/lib/supabase'
+import { insforgeClient } from '@/lib/insforge-client'
+import {
+  clearStoredUserSession,
+  fetchCurrentAuthUser,
+  getStoredUserToken,
+  saveStoredUserToken,
+} from '@/lib/auth-session'
 import { Usuario, LoginData, RegisterData, Carrito } from '@/types/user'
+import { AuthActionResult, isEmailVerificationError, isUserAlreadyExistsError } from '@/types/auth'
+
+type AuthUserPayload = {
+  id: string
+  email: string
+  emailVerified?: boolean
+  createdAt: string
+  updatedAt: string
+}
 
 interface UserAuthContextType {
   user: Usuario | null
   carrito: Carrito | null
   isAuthenticated: boolean
   isLoading: boolean
-  login: (data: LoginData) => Promise<{ success: boolean; error?: string }>
-  register: (data: RegisterData) => Promise<{ success: boolean; error?: string }>
+  login: (data: LoginData) => Promise<AuthActionResult>
+  register: (data: RegisterData) => Promise<AuthActionResult>
   logout: () => void
   addToCart: (productoId: string, colorId: string, talla: string, cantidad?: number) => Promise<void>
   removeFromCart: (itemId: string) => Promise<void>
@@ -30,45 +45,47 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
 
   const checkAuth = useCallback(async () => {
     try {
-      // Verificar sesión activa con Supabase
-      const { data: { user: supabaseUser }, error } = await supabase.auth.getUser()
-      
-      if (supabaseUser && !error) {
-        // Obtener datos del usuario desde nuestra tabla
-        const { data: userData, error: userError } = await supabase
+      if (!getStoredUserToken()) {
+        setUser(null)
+        setIsAuthenticated(false)
+        return
+      }
+
+      const authUser = await fetchCurrentAuthUser()
+
+      if (authUser) {
+        const { data: userData, error: userError } = await insforgeClient
           .from('usuarios')
           .select('*')
-          .eq('id', supabaseUser.id)
+          .eq('id', authUser.id)
           .single()
 
         if (userData && !userError) {
           setUser(userData)
           setIsAuthenticated(true)
           await loadCart(userData.id)
-        } else {
-          console.error('Error fetching user data:', userError)
-          // Limpiar tokens inválidos
-          await supabase.auth.signOut()
-          localStorage.removeItem('user_token')
-          setUser(null)
-          setIsAuthenticated(false)
+          return
         }
-      } else {
-        // No hay sesión activa, limpiar estado
-        await supabase.auth.signOut()
-        localStorage.removeItem('user_token')
-        setUser(null)
-        setIsAuthenticated(false)
+
+        console.error('Error fetching user data:', userError)
       }
+
+      clearStoredUserSession()
+      try {
+        await insforgeClient.auth.signOut()
+      } catch {
+        // sin sesión activa en cookies
+      }
+      setUser(null)
+      setIsAuthenticated(false)
     } catch (error) {
       console.error('Error checking auth:', error)
-      // Limpiar tokens inválidos en caso de error
+      clearStoredUserSession()
       try {
-        await supabase.auth.signOut()
-      } catch (signOutError) {
-        console.error('Error signing out:', signOutError)
+        await insforgeClient.auth.signOut()
+      } catch {
+        // ignorar
       }
-      localStorage.removeItem('user_token')
       setUser(null)
       setIsAuthenticated(false)
     } finally {
@@ -80,12 +97,106 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
     checkAuth()
   }, [checkAuth])
 
+  const createUserProfile = async (
+    userId: string,
+    data: Pick<RegisterData, 'nombre' | 'email' | 'telefono'>,
+    accessToken: string | null
+  ): Promise<{ ok: boolean; error?: string }> => {
+    const profileRes = await fetch('/api/user/profile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId,
+        nombre: data.nombre,
+        email: data.email,
+        telefono: data.telefono || null,
+        accessToken,
+      }),
+    })
+    const profileJson = await profileRes.json()
+    if (profileRes.ok) return { ok: true }
+
+    const msg = (profileJson.error as string) || ''
+    const alreadyInDb =
+      msg.toLowerCase().includes('duplicate') ||
+      msg.toLowerCase().includes('unique') ||
+      msg.toLowerCase().includes('ya existe')
+    if (alreadyInDb) return { ok: true }
+
+    return { ok: false, error: msg || 'Error al crear perfil de usuario' }
+  }
+
+  const finalizeRegistration = async (
+    authUser: AuthUserPayload,
+    data: RegisterData,
+    accessToken: string | null
+  ): Promise<AuthActionResult> => {
+    const profile = await createUserProfile(authUser.id, data, accessToken)
+    if (!profile.ok) {
+      return { success: false, error: profile.error }
+    }
+
+    if (!authUser.emailVerified) {
+      // signUp ya envió el correo con enlace; un resend aquí invalida el token anterior.
+      return {
+        success: true,
+        needsVerification: true,
+        email: data.email,
+      }
+    }
+
+    if (accessToken) {
+      saveStoredUserToken(accessToken)
+      setUser({
+        id: authUser.id,
+        nombre: data.nombre,
+        email: data.email,
+        telefono: data.telefono,
+        created_at: authUser.createdAt,
+        updated_at: authUser.updatedAt,
+      })
+      setIsAuthenticated(true)
+      await loadCart(authUser.id)
+    }
+
+    return { success: true }
+  }
+
+  const ensureProfileAfterAuthSignup = async (
+    data: RegisterData,
+    options?: { sendVerificationEmail?: boolean }
+  ): Promise<AuthActionResult> => {
+    const res = await fetch('/api/user/ensure-profile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: data.email,
+        nombre: data.nombre,
+        telefono: data.telefono || null,
+      }),
+    })
+    const json = await res.json()
+    if (!res.ok) {
+      return { success: false, error: json.error || 'No se pudo crear el perfil' }
+    }
+
+    if (options?.sendVerificationEmail) {
+      await insforgeClient.auth.resendVerificationEmail(data.email)
+    }
+
+    return {
+      success: true,
+      needsVerification: true,
+      email: data.email,
+    }
+  }
+
   const loadCart = async (userId: string) => {
     try {
       // Obtener o crear carrito
       let carritoData = null
       
-      const { data: existingCarrito, error: carritoError } = await supabase
+      const { data: existingCarrito, error: carritoError } = await insforgeClient
         .from('carritos')
         .select(`
           *,
@@ -100,7 +211,7 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
 
       if (carritoError && carritoError.code === 'PGRST116') {
         // No existe carrito, crear uno nuevo
-        const { data: newCarrito, error: newCarritoError } = await supabase
+        const { data: newCarrito, error: newCarritoError } = await insforgeClient
           .from('carritos')
           .insert({ usuario_id: userId })
           .select(`
@@ -128,21 +239,46 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const login = async (data: LoginData): Promise<{ success: boolean; error?: string }> => {
+  const requestEmailVerification = async (email: string): Promise<AuthActionResult> => {
+    const { error } = await insforgeClient.auth.resendVerificationEmail(email)
+    if (error) {
+      return {
+        success: false,
+        error: error.message || 'No se pudo enviar el código de verificación',
+      }
+    }
+    return {
+      success: false,
+      needsVerification: true,
+      email,
+      error: 'Debes verificar tu correo. Te enviamos un enlace; ábrelo y luego inicia sesión.',
+    }
+  }
+
+  const login = async (data: LoginData): Promise<AuthActionResult> => {
     try {
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      const { data: authData, error: authError } = await insforgeClient.auth.signInWithPassword({
         email: data.email,
         password: data.password
       })
 
       if (authError) {
         console.error('Auth error:', authError)
+        if (isEmailVerificationError(authError.message)) {
+          return requestEmailVerification(data.email)
+        }
         return { success: false, error: authError.message }
       }
 
+      if (authData?.user && !authData.user.emailVerified) {
+        await insforgeClient.auth.signOut()
+        clearStoredUserSession()
+        return requestEmailVerification(data.email)
+      }
+
       if (authData?.user && authData?.session) {
-        // Obtener datos del usuario
-        const { data: userData, error: userError } = await supabase
+        saveStoredUserToken(authData.session.access_token)
+        const { data: userData, error: userError } = await insforgeClient
           .from('usuarios')
           .select('*')
           .eq('id', authData.user.id)
@@ -152,11 +288,14 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
           setUser(userData)
           setIsAuthenticated(true)
           await loadCart(userData.id)
-          localStorage.setItem('user_token', authData.session.access_token)
           return { success: true }
-        } else {
-          console.error('User data error:', userError)
-          return { success: false, error: 'Error al obtener datos del usuario' }
+        }
+
+        console.error('User data error:', userError)
+        return {
+          success: false,
+          error:
+            'Tu cuenta existe en el sistema pero falta el perfil. Ve a Registrarse con el mismo correo y contraseña para completarla.',
         }
       }
 
@@ -167,54 +306,58 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const register = async (data: RegisterData): Promise<{ success: boolean; error?: string }> => {
+  const register = async (data: RegisterData): Promise<AuthActionResult> => {
     try {
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      const { data: authData, error: authError } = await insforgeClient.auth.signUp({
         email: data.email,
         password: data.password,
         options: { data: { nombre: data.nombre } },
       })
 
       if (authError) {
-        return { success: false, error: authError.message }
+        const authErr = authError as { message?: string; statusCode?: number }
+        if (isUserAlreadyExistsError(authErr.message ?? '', authErr.statusCode)) {
+          const { data: loginData, error: loginError } = await insforgeClient.auth.signInWithPassword({
+            email: data.email,
+            password: data.password,
+          })
+
+          if (loginError) {
+            const loginErr = loginError as { message?: string; statusCode?: number }
+            if (isEmailVerificationError(loginErr.message ?? '')) {
+              return ensureProfileAfterAuthSignup(data, { sendVerificationEmail: true })
+            }
+            return {
+              success: false,
+              error:
+                'Ya existe una cuenta con este correo. Inicia sesión con tu contraseña o usa «¿Olvidaste tu contraseña?».',
+            }
+          }
+
+          if (loginData?.user) {
+            return finalizeRegistration(
+              loginData.user,
+              data,
+              loginData.session?.access_token ?? null
+            )
+          }
+
+          return ensureProfileAfterAuthSignup(data, { sendVerificationEmail: true })
+        }
+
+        return { success: false, error: authErr.message || 'Error al crear cuenta' }
+      }
+
+      if (authData?.requireEmailVerification && !authData.user) {
+        return ensureProfileAfterAuthSignup(data)
       }
 
       if (authData?.user) {
-        const profileRes = await fetch('/api/user/profile', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId: authData.user.id,
-            nombre: data.nombre,
-            email: data.email,
-            telefono: data.telefono || null,
-            accessToken: authData.accessToken ?? null,
-          }),
-        })
-        const profileJson = await profileRes.json()
-        if (!profileRes.ok) {
-          return { success: false, error: profileJson.error || 'Error al crear perfil de usuario' }
-        }
-
-        if (authData.requireEmailVerification) {
-          return { success: true }
-        }
-
-        if (authData.accessToken) {
-          localStorage.setItem('user_token', authData.accessToken)
-          setUser({
-            id: authData.user.id,
-            nombre: data.nombre,
-            email: data.email,
-            telefono: data.telefono,
-            created_at: authData.user.createdAt,
-            updated_at: authData.user.updatedAt,
-          })
-          setIsAuthenticated(true)
-          await loadCart(authData.user.id)
-        }
-
-        return { success: true }
+        return finalizeRegistration(
+          authData.user,
+          data,
+          authData.accessToken ?? null
+        )
       }
 
       return { success: false, error: 'Error al crear cuenta' }
@@ -225,13 +368,14 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     try {
-      await supabase.auth.signOut()
+      await insforgeClient.auth.signOut()
+    } catch (error) {
+      console.error('Error logging out:', error)
+    } finally {
+      clearStoredUserSession()
       setUser(null)
       setCarrito(null)
       setIsAuthenticated(false)
-      localStorage.removeItem('user_token')
-    } catch (error) {
-      console.error('Error logging out:', error)
     }
   }
 
@@ -249,7 +393,7 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
         await updateCartItemQuantity(existingItem.id, existingItem.cantidad + cantidad)
       } else {
         // Agregar nuevo item
-        const { error } = await supabase
+        const { error } = await insforgeClient
           .from('carrito_items')
           .insert({
             carrito_id: carrito.id,
@@ -270,7 +414,7 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
 
   const removeFromCart = async (itemId: string) => {
     try {
-      const { error } = await supabase
+      const { error } = await insforgeClient
         .from('carrito_items')
         .delete()
         .eq('id', itemId)
@@ -285,7 +429,7 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
 
   const updateCartItemQuantity = async (itemId: string, cantidad: number) => {
     try {
-      const { error } = await supabase
+      const { error } = await insforgeClient
         .from('carrito_items')
         .update({ cantidad })
         .eq('id', itemId)
@@ -302,7 +446,7 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
     if (!carrito) return
 
     try {
-      const { error } = await supabase
+      const { error } = await insforgeClient
         .from('carrito_items')
         .delete()
         .eq('carrito_id', carrito.id)
@@ -322,19 +466,17 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
 
   const refreshUser = async () => {
     try {
-      const { data: { user: supabaseUser }, error } = await supabase.auth.getUser()
-      
-      if (supabaseUser && !error) {
-        // Obtener datos actualizados del usuario desde nuestra tabla
-        const { data: userData, error: userError } = await supabase
+      const authUser = await fetchCurrentAuthUser()
+
+      if (authUser) {
+        const { data: userData, error: userError } = await insforgeClient
           .from('usuarios')
           .select('*')
-          .eq('id', supabaseUser.id)
+          .eq('id', authUser.id)
           .single()
 
         if (userData && !userError) {
           setUser(userData)
-          console.log('User data refreshed:', userData)
         } else {
           console.error('Error refreshing user data:', userError)
         }

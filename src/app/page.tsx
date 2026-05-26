@@ -7,95 +7,74 @@ import { useProductos } from "@/hooks/use-productos"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { CarouselProvider, useCarouselContext } from "@/contexts/carousel-context"
+import { HERO_IMAGE_ALT } from "@/lib/site"
 
 function HomePageContent() {
   const { featuredProducts, isLoading, error } = useProductos()
   const { scrollLeft, scrollRight, canScrollLeft, canScrollRight } = useCarouselContext()
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[var(--store-bg)]">
       <Header />
 
-      {/* Hero Image */}
-      <section className="relative w-full bg-gray-200 overflow-hidden">
+      <section className="relative w-full overflow-hidden bg-gray-200">
         <div className="relative w-full">
           <Image
             src="/hero1.png"
-            alt="Excusas Jeans — tienda de jeans en Perú | excusasjeans.com"
+            alt={HERO_IMAGE_ALT}
             width={1200}
             height={800}
-            className="w-full h-auto object-contain animate-hero-zoom"
+            className="h-auto w-full animate-hero-zoom object-contain"
             priority
             sizes="(max-width: 640px) 100vw, (max-width: 768px) 100vw, (max-width: 1024px) 100vw, (max-width: 1280px) 100vw, 100vw"
           />
-          {/* Overlay sutil para mejor contraste */}
-          <div className="absolute inset-0 bg-black/5"></div>
+          <div className="absolute inset-0 bg-black/5" />
         </div>
       </section>
-      
-      {/* Contenido principal */}
-      <main className="container mx-auto px-4 py-8 md:py-16">
 
-        {/* Productos Destacados */}
+      <main className="store-container-home py-8 md:py-16">
         <section className="mb-12 md:mb-20">
-          <div className="mb-6 sm:mb-8 md:mb-12">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 animate-slide-up delay-200">
-                Nuestros Productos
-              </h2>
-              <NavigationArrows
-                scrollLeft={scrollLeft}
-                scrollRight={scrollRight}
-                canScrollLeft={canScrollLeft}
-                canScrollRight={canScrollRight}
+          <div className="mb-6 flex items-center justify-between sm:mb-8 md:mb-12">
+            <h2 className="store-title">New Arrivals</h2>
+            <NavigationArrows
+              scrollLeft={scrollLeft}
+              scrollRight={scrollRight}
+              canScrollLeft={canScrollLeft}
+              canScrollRight={canScrollRight}
+            />
+          </div>
+
+          <HorizontalProductCarousel
+            productos={featuredProducts}
+            isLoading={isLoading}
+            error={error || undefined}
+          />
+        </section>
+
+        <section className="mb-12 md:mb-20">
+          <div className="mb-8 flex justify-center">
+            <div className="w-full border-t border-gray-300" />
+          </div>
+
+          <div className="flex justify-center">
+            <div className="relative w-full max-w-4xl">
+              <video
+                src={process.env.NEXT_PUBLIC_HERO_VIDEO_URL || "/video-1-excusas.mp4"}
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="aspect-[4/3] w-full rounded-lg object-cover shadow-lg"
+                style={{ pointerEvents: "none" }}
               />
             </div>
           </div>
 
-          <div>
-            <HorizontalProductCarousel 
-              productos={featuredProducts}
-              isLoading={isLoading}
-              error={error || undefined}
-            />
-          </div>
-        </section>
-
-        {/* Video Section */}
-        <section className="mb-12 md:mb-20">
-          {/* Línea separadora */}
-          <div className="flex justify-center mb-8">
-            <div className="w-full border-t border-gray-300"></div>
-          </div>
-          
-          <div className="flex justify-center">
+          <div className="mt-4 flex justify-center">
             <div className="relative w-full max-w-4xl">
-              {process.env.NEXT_PUBLIC_HERO_VIDEO_URL ? (
-                <video
-                  src={process.env.NEXT_PUBLIC_HERO_VIDEO_URL}
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  className="w-full aspect-[4/3] object-cover rounded-lg shadow-lg"
-                  style={{ pointerEvents: 'none' }}
-                />
-              ) : (
-                <Image
-                  src="/hero1.png"
-                  alt="Excusas Jeans"
-                  width={1200}
-                  height={900}
-                  className="w-full aspect-[4/3] object-cover rounded-lg shadow-lg"
-                />
-              )}
-            </div>
-          </div>
-          
-          {/* Texto debajo del video */}
-          <div className="flex justify-center mt-4">
-            <div className="relative w-full max-w-4xl">
-              <p className="text-sm text-gray-400 font-light uppercase absolute right-0">Stretch Semi Cadera</p>
+              <p className="absolute right-0 text-sm font-light uppercase text-gray-400">
+                Stretch Semi Cadera
+              </p>
             </div>
           </div>
         </section>

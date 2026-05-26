@@ -14,7 +14,7 @@ interface SimpleFeaturedProductsProps {
 // Componente de loading simplificado
 const LoadingSkeleton = memo(function LoadingSkeleton() {
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 gap-4 sm:gap-5 md:grid-cols-3 lg:grid-cols-4">
       {Array.from({ length: 8 }).map((_, i) => (
         <div 
           key={i} 
@@ -70,7 +70,7 @@ export function SimpleFeaturedProducts({ productos, isLoading, error }: SimpleFe
   }
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 gap-4 sm:gap-5 md:grid-cols-3 lg:grid-cols-4">
       {productos.map((producto, index) => {
         const delayClass = `delay-${Math.min(index * 100, 1000)}`
         return (

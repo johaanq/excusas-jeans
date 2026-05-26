@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:clean": "node -e \"try{require('fs').rmSync('.next',{recursive:true,force:true})}catch(e){}\" && next dev",
     "dev:webpack": "next dev",
     "build": "next build",
     "build:turbo": "next build --turbopack",
@@ -26,17 +27,18 @@
     "next": "15.5.9",
     "react": "19.1.0",
     "react-dom": "19.1.0",
+    "resend": "^6.12.4",
     "tailwind-merge": "^3.3.1",
     "tw-animate-css": "^1.3.8",
     "web-vitals": "^5.1.0"
   },
   "devDependencies": {
-    "autoskills": "^0.3.6",
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "autoskills": "^0.3.6",
     "eslint": "^9",
     "eslint-config-next": "15.5.9",
     "tailwindcss": "^4",

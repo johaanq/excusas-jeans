@@ -10,6 +10,8 @@ const STATIC_ROUTES: { path: string; priority: number; changeFrequency: Metadata
   { path: '/ayuda/contacto', priority: 0.5, changeFrequency: 'monthly' },
   { path: '/ayuda/preguntas-frecuentes', priority: 0.5, changeFrequency: 'monthly' },
   { path: '/ayuda/terminos-condiciones', priority: 0.3, changeFrequency: 'yearly' },
+  { path: '/ayuda/politica-cambios-devoluciones', priority: 0.3, changeFrequency: 'yearly' },
+  { path: '/ayuda/libro-reclamaciones', priority: 0.4, changeFrequency: 'monthly' },
 ]
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {

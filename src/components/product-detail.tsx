@@ -1,386 +1,347 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { SafeImage } from "@/components/ui/safe-image"
-// Tabs removed for simplicity
-// Dialog removed for simplicity
-import { ArrowLeft, Share2, MessageCircle, Plus, Minus, ShoppingCart } from "lucide-react"
+import Image from "next/image"
+import { ShoppingBag } from "lucide-react"
 import { type Producto } from "@/data/productos"
 import { type CartItem } from "@/hooks/use-cart"
 import { generateWhatsAppMessage, openWhatsApp } from "@/lib/utils"
+import { WHATSAPP_NUMBER_E164 } from "@/lib/site"
 import { useCart } from "@/hooks/use-cart"
 import { useUserAuth } from "@/contexts/user-auth-context"
 import { ClientOnly } from "@/components/ui/client-only"
+import { StoreBreadcrumb } from "@/components/store/store-breadcrumb"
+import { cn } from "@/lib/utils"
+import { Minus, Plus } from "lucide-react"
 
 interface ProductDetailProps {
   producto: Producto
 }
 
+type GalleryImage = {
+  url: string
+  alt: string
+  type: "principal" | "color"
+  colorId: string | null
+}
+
+function formatSoles(amount: number) {
+  return amount.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
 function ProductDetailContent({ producto }: ProductDetailProps) {
-  const [selectedColorIndex, setSelectedColorIndex] = useState(-1) // -1 = sin color seleccionado
-  const [selectedTalla, setSelectedTalla] = useState<string>("")
+  const hasColors = producto.colores.length > 0
+  const [selectedColorIndex, setSelectedColorIndex] = useState(hasColors ? 0 : -1)
+  const [selectedTalla, setSelectedTalla] = useState("")
   const [cantidad, setCantidad] = useState(1)
-  const [selectedImageIndex, setSelectedImageIndex] = useState(0) // Siempre empezar con la foto principal
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0)
+  const [medidasOpen, setMedidasOpen] = useState(false)
+  const [notasOpen, setNotasOpen] = useState(false)
 
   const { addItem } = useCart()
   const { user, isAuthenticated } = useUserAuth()
   const selectedColor = selectedColorIndex >= 0 ? producto.colores[selectedColorIndex] : null
-  
-  // Crear un array con todas las imágenes: foto principal + fotos de todos los colores
-  const allImages = useMemo(() => {
-    const images = []
-    
-    // Agregar foto principal primero si existe
+
+  const allImages = useMemo((): GalleryImage[] => {
+    const images: GalleryImage[] = []
     if (producto.foto_principal) {
       images.push({
         url: producto.foto_principal,
-        alt: `${producto.nombre} - Imagen principal`,
-        type: 'principal',
+        alt: producto.nombre,
+        type: "principal",
         colorId: null,
-        colorName: 'Principal'
       })
     }
-    
-    // Agregar fotos de todos los colores
-    producto.colores.forEach(color => {
-      if (color.fotos && color.fotos.length > 0) {
-        color.fotos.forEach((foto, index) => {
-          images.push({
-            url: foto.url,
-            alt: `${producto.nombre} - ${color.nombre} - Foto ${index + 1}`,
-            type: 'color',
-            colorId: color.id,
-            colorName: color.nombre,
-            fotoIndex: index
-          })
+    producto.colores.forEach((color) => {
+      color.fotos?.forEach((foto) => {
+        images.push({
+          url: foto.url,
+          alt: `${producto.nombre} — ${color.nombre}`,
+          type: "color",
+          colorId: color.id,
         })
-      }
+      })
     })
-    
     return images
   }, [producto])
-  
-  // Imagen principal actual
-  const mainImage = allImages[selectedImageIndex]?.url || "/placeholder.svg"
-  
 
-  // Cuando cambia el color seleccionado, cambiar a la primera foto de ese color
+  const mainImage = allImages[selectedImageIndex]?.url || "/placeholder.svg"
+  const displayPrice =
+    cantidad >= 4 && producto.precio_mayor ? producto.precio_mayor : producto.precio
+
   useEffect(() => {
-    if (selectedColor && selectedColor.fotos && selectedColor.fotos.length > 0) {
-      // Buscar el índice de la primera foto de este color en allImages
-      const colorFirstPhotoIndex = allImages.findIndex(img => 
-        img.type === 'color' && img.colorId === selectedColor.id
+    if (selectedColor?.fotos?.length) {
+      const idx = allImages.findIndex(
+        (img) => img.type === "color" && img.colorId === selectedColor.id
       )
-      
-      if (colorFirstPhotoIndex !== -1) {
-        setSelectedImageIndex(colorFirstPhotoIndex)
-      }
-    } else if (selectedColorIndex === -1) {
-      // Si no hay color seleccionado, volver a la foto principal
+      if (idx !== -1) setSelectedImageIndex(idx)
+    } else if (selectedColorIndex === -1 && allImages.length > 0) {
       setSelectedImageIndex(0)
     }
   }, [selectedColor, allImages, selectedColorIndex])
 
-  // Check if selected size is in stock
   const selectedTallaObj = producto.tallas.find((t) => t.talla === selectedTalla)
-  const isInStock = selectedTallaObj?.en_stock || false
+  const isInStock = selectedTallaObj?.en_stock ?? false
+  const canPurchase = Boolean(selectedTalla && isInStock && selectedColor)
 
   const handleAddToCart = async () => {
-    if (!selectedTalla || !isInStock || !selectedColor) {
-      if (!selectedColor) {
-        alert('Por favor selecciona un color antes de agregar al carrito')
-      }
-      return
-    }
-
-    // Crear un producto temporal con el precio correcto según la cantidad
-    const productoConPrecioCorrecto = {
-      ...producto,
-      precio: cantidad >= 4 && producto.precio_mayor ? producto.precio_mayor : producto.precio
-    }
-
-    
-    await addItem(productoConPrecioCorrecto, selectedColor, selectedTalla, cantidad)
-    // Reset form
+    if (!canPurchase || !selectedColor) return
+    await addItem(
+      { ...producto, precio: displayPrice ?? producto.precio },
+      selectedColor,
+      selectedTalla,
+      cantidad
+    )
     setCantidad(1)
   }
 
   const handleWhatsAppOrder = async () => {
-    if (!selectedTalla || !selectedColor) {
-      if (!selectedColor) {
-        alert('Por favor selecciona un color antes de continuar')
-      }
-      return
-    }
-
-    // Crear un producto temporal con el precio correcto según la cantidad
-    const productoConPrecioCorrecto = {
-      ...producto,
-      precio: cantidad >= 4 && producto.precio_mayor ? producto.precio_mayor : producto.precio
-    }
-
+    if (!selectedTalla || !selectedColor) return
     const cartItem: CartItem = {
-      producto: productoConPrecioCorrecto,
+      producto: { ...producto, precio: displayPrice ?? producto.precio },
       color: selectedColor,
       talla: selectedTalla,
       cantidad,
     }
-
-    // Usar información del perfil si está disponible
-    const customerInfo = isAuthenticated ? {
-      nombre: user?.nombre || '',
-      dni: user?.dni || '',
-      telefono: user?.telefono || '',
-      provincia: user?.provincia || '',
-      distrito: user?.distrito || '',
-      direccion: user?.direccion || '',
-      referencia: user?.referencia || '',
-      codigo_postal: user?.codigo_postal || '',
-      empresa_envio: user?.empresa_envio || '',
-      sede_envio: user?.sede_envio || ''
-    } : undefined
-
-    const message = generateWhatsAppMessage([cartItem], customerInfo)
-    await openWhatsApp('51934762253', message)
+    const customerInfo = isAuthenticated
+      ? {
+          nombre: user?.nombre || "",
+          dni: user?.dni || "",
+          telefono: user?.telefono || "",
+          provincia: user?.provincia || "",
+          distrito: user?.distrito || "",
+          direccion: user?.direccion || "",
+          referencia: user?.referencia || "",
+          codigo_postal: user?.codigo_postal || "",
+          empresa_envio: user?.empresa_envio || "",
+          sede_envio: user?.sede_envio || "",
+        }
+      : undefined
+    await openWhatsApp(
+      WHATSAPP_NUMBER_E164,
+      generateWhatsAppMessage([cartItem], customerInfo)
+    )
   }
 
   return (
-    <div className="max-w-7xl mx-auto">
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
-        <Link href="/" className="hover:text-primary transition-colors">
-          <ArrowLeft className="w-4 h-4 mr-1 inline" />
-          Volver al catálogo
-        </Link>
-      </div>
+    <article>
+      <StoreBreadcrumb
+        items={[
+          { label: "Inicio", href: "/" },
+          { label: "Catálogo", href: "/catalogo" },
+          { label: producto.nombre },
+        ]}
+      />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-12">
-        {/* Product Images */}
-        <div className="space-y-3 lg:space-y-4">
-          {/* Imagen principal grande */}
-          <div className="relative overflow-hidden rounded-lg border border-border" style={{ aspectRatio: '4/5' }}>
-            {/* Usar imagen normal para debug */}
-            <img
-              key={`main-image-${selectedImageIndex}-${mainImage}`}
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(280px,380px)] lg:gap-12">
+        <div className="flex flex-col gap-3 md:flex-row md:gap-4">
+          {allImages.length > 1 && (
+            <div className="order-2 flex gap-2 overflow-x-auto pb-1 md:order-1 md:w-16 md:shrink-0 md:flex-col md:overflow-y-auto md:overflow-x-visible">
+              {allImages.map((image, index) => (
+                <button
+                  key={`${image.colorId ?? "p"}-${index}`}
+                  type="button"
+                  onClick={() => setSelectedImageIndex(index)}
+                  className={cn(
+                    "relative aspect-[3/4] w-14 shrink-0 overflow-hidden rounded-md bg-stone-100 md:w-full",
+                    selectedImageIndex === index
+                      ? "ring-2 ring-[var(--store-denim-dark)] ring-offset-1"
+                      : "opacity-75 hover:opacity-100"
+                  )}
+                >
+                  <Image src={image.url} alt="" fill sizes="64px" className="object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
+
+          <div className="relative order-1 aspect-[3/4] w-full overflow-hidden rounded-lg bg-stone-100 md:order-2 md:flex-1">
+            <Image
+              key={`${selectedImageIndex}-${mainImage}`}
               src={mainImage}
-              alt={allImages[selectedImageIndex]?.alt || `${producto.nombre} - Imagen principal`}
-              className="w-full h-full object-cover"
+              alt={allImages[selectedImageIndex]?.alt ?? producto.nombre}
+              fill
+              priority
+              sizes="(max-width: 1024px) 100vw, 60vw"
+              className="object-cover"
             />
-            
-            {/* Indicador de imagen actual */}
-            {allImages.length > 1 && (
-              <div className="absolute top-2 right-2 lg:top-3 lg:right-3 bg-background/80 backdrop-blur-sm px-2 py-1 rounded text-xs lg:text-sm">
-                {selectedImageIndex + 1} / {allImages.length}
-              </div>
+          </div>
+        </div>
+
+        <div className="lg:sticky lg:top-28 lg:self-start">
+          <p className="store-kicker">Excusas Jeans</p>
+          <h1 className="store-title mt-1">{producto.nombre}</h1>
+          {producto.descripcion && (
+            <p className="store-lead mt-3">{producto.descripcion}</p>
+          )}
+
+          <div className="store-section">
+            {displayPrice != null && <p className="store-price-lg">S/ {formatSoles(displayPrice)}</p>}
+            {producto.precio_mayor && (
+              <p className="store-meta mt-2">
+                Precio por mayor (4+ unidades del mismo modelo): S/{" "}
+                {formatSoles(producto.precio_mayor)}
+              </p>
             )}
-            
           </div>
 
-          {/* Thumbnails de todas las imágenes */}
-          {allImages.length > 1 && (
-            <div className="space-y-2 lg:space-y-3">
-              <div className="flex gap-2 overflow-x-auto pb-2">
-                {allImages.map((image, index) => (
+          {hasColors && (
+            <div className="store-section">
+              <p className="store-label">
+                Color
+                {selectedColor ? `: ${selectedColor.nombre}` : ""}
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {producto.colores.map((color, index) => (
                   <button
-                    key={`${image.colorId || 'principal'}-${index}`}
-                    className={`relative aspect-square w-16 h-16 lg:w-20 lg:h-20 rounded-lg border overflow-hidden flex-shrink-0 transition-all ${
-                      selectedImageIndex === index
-                        ? "border-primary scale-105" 
-                        : "border-border hover:border-primary"
-                    }`}
-                    onClick={() => setSelectedImageIndex(index)}
-                    title={image.alt}
+                    key={color.id}
+                    type="button"
+                    onClick={() => setSelectedColorIndex(index)}
+                    className={cn(
+                      "store-chip rounded-md",
+                      selectedColorIndex === index && "store-chip-active"
+                    )}
                   >
-                    <SafeImage
-                      src={image.url}
-                      alt={image.alt}
-                      fill
-                      sizes="80px"
-                      className="object-cover"
-                    />
+                    {color.nombre}
                   </button>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Guía de Medidas */}
-          {producto.fotos_medidas && producto.fotos_medidas.length > 0 && (
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium text-muted-foreground">Guía de Medidas:</h4>
-              <div className="aspect-square relative overflow-hidden rounded-lg border border-border max-w-xs">
-                <img
-                  src={producto.fotos_medidas[0].url}
-                  alt={`Guía de medidas - ${producto.nombre}`}
-                  className="w-full h-full object-contain bg-gray-50"
-                />
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Consulta esta guía para elegir la talla correcta
-              </p>
-            </div>
-          )}
-
-        </div>
-
-        {/* Product Info */}
-        <div className="space-y-4 lg:space-y-6">
-          <div>
-            <h1 className="text-2xl lg:text-3xl font-bold text-foreground mb-2">{producto.nombre}</h1>
-            <p className="text-base lg:text-lg text-muted-foreground">{producto.descripcion}</p>
-          </div>
-
-          {/* Precio dinámico */}
-          <div className="space-y-2">
-            {producto.precio && (
-              <div className="text-2xl lg:text-3xl font-bold text-primary">
-                S/{cantidad >= 4 && producto.precio_mayor ? producto.precio_mayor.toFixed(2) : producto.precio.toFixed(2)}
-              </div>
-            )}
-            {cantidad >= 4 && producto.precio_mayor && (
-              <div className="text-sm text-green-600 font-medium">
-                ✅ Precio por mayor aplicado (4+ unidades)
-              </div>
-            )}
-            {cantidad < 4 && producto.precio_mayor && (
-              <div className="text-sm text-muted-foreground">
-                💡 Precio por mayor disponible desde 4 unidades
-              </div>
-            )}
-          </div>
-
-          {/* Color Selection */}
-          <div className="space-y-3">
-            <h3 className="font-semibold text-foreground">
-              Color: {selectedColor ? selectedColor.nombre : "Talla"}
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              {producto.colores.map((color, index) => (
-                <Button
-                  key={color.id}
-                  variant={selectedColorIndex === index ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSelectedColorIndex(index)}
-                  className="min-w-fit"
-                >
-                  {color.nombre}
-                </Button>
-              ))}
-            </div>
-            <p className="text-sm text-muted-foreground">
-              {selectedColor ? "Color seleccionado" : "Selecciona un color para ver sus fotos"}
-            </p>
-          </div>
-
-
-          {/* Size Selection */}
-          <div className="space-y-3">
-            <h3 className="font-semibold text-foreground">Talla</h3>
-
-            <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
+          <div className="store-section">
+            <p className="store-label">Talla</p>
+            <div className="mt-3 flex flex-wrap gap-2">
               {producto.tallas.map((talla) => (
-                <Button
+                <button
                   key={talla.id}
-                  variant={selectedTalla === talla.talla ? "default" : "outline"}
-                  className={`text-sm ${!talla.en_stock ? "opacity-50 cursor-not-allowed" : ""}`}
+                  type="button"
                   disabled={!talla.en_stock}
                   onClick={() => setSelectedTalla(talla.talla)}
+                  className={cn(
+                    "store-chip min-w-[2.75rem] rounded-md tabular-nums",
+                    !talla.en_stock && "cursor-not-allowed opacity-40 line-through",
+                    selectedTalla === talla.talla &&
+                      talla.en_stock &&
+                      "store-chip-active"
+                  )}
                 >
                   {talla.talla}
-                  {!talla.en_stock && <span className="ml-1 text-xs">✕</span>}
-                </Button>
+                </button>
               ))}
             </div>
-            
+            {selectedTalla && (
+              <p className="store-meta mt-2">{isInStock ? "Disponible" : "Agotado"}</p>
+            )}
           </div>
 
-          {/* Quantity */}
-          <div className="space-y-3">
-            <h3 className="font-semibold text-foreground">Cantidad</h3>
-            <div className="flex items-center gap-3">
-              <Button
-                variant="outline"
-                size="icon"
+          <div className="store-section">
+            <p className="store-label">Cantidad</p>
+            <div className="mt-3 inline-flex items-stretch overflow-hidden rounded-md border border-stone-300">
+              <button
+                type="button"
+                className="flex h-10 w-10 items-center justify-center text-stone-600 hover:bg-stone-50 disabled:opacity-30"
                 onClick={() => setCantidad(Math.max(1, cantidad - 1))}
                 disabled={cantidad <= 1}
+                aria-label="Menos"
               >
-                <Minus className="w-4 h-4" />
-              </Button>
-              <span className="w-12 text-center font-semibold">{cantidad}</span>
-              <Button variant="outline" size="icon" onClick={() => setCantidad(cantidad + 1)}>
-                <Plus className="w-4 h-4" />
-              </Button>
+                <Minus className="h-3.5 w-3.5" />
+              </button>
+              <span className="flex h-10 min-w-[2.5rem] items-center justify-center border-x border-stone-300 text-sm tabular-nums">
+                {cantidad}
+              </span>
+              <button
+                type="button"
+                className="flex h-10 w-10 items-center justify-center text-stone-600 hover:bg-stone-50"
+                onClick={() => setCantidad(cantidad + 1)}
+                aria-label="Más"
+              >
+                <Plus className="h-3.5 w-3.5" />
+              </button>
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Button className="flex-1" size="lg" onClick={handleAddToCart} disabled={!selectedTalla || !isInStock || !selectedColor}>
-                <ShoppingCart className="w-4 h-4 lg:w-5 lg:h-5 mr-2" />
-                <span className="text-sm lg:text-base">Agregar al Carrito</span>
-              </Button>
-
-              <Button
-                variant="outline"
-                className="flex-1 bg-transparent"
-                size="lg"
-                onClick={handleWhatsAppOrder}
-                disabled={!selectedTalla || !isInStock || !selectedColor}
-              >
-                <MessageCircle className="w-4 h-4 lg:w-5 lg:h-5 mr-2" />
-                <span className="text-sm lg:text-base">WhatsApp</span>
-              </Button>
-            </div>
-
-            <div className="flex gap-3">
-              <Button variant="outline" size="icon">
-                <Share2 className="w-4 h-4" />
-              </Button>
-            </div>
+          <div className="mt-8 space-y-3">
+            <button
+              type="button"
+              className="store-btn-primary gap-2 disabled:opacity-50"
+              onClick={handleAddToCart}
+              disabled={!canPurchase}
+            >
+              <ShoppingBag className="h-4 w-4" strokeWidth={1.75} />
+              Agregar al carrito
+            </button>
+            <button
+              type="button"
+              className="store-link w-full disabled:opacity-40"
+              onClick={handleWhatsAppOrder}
+              disabled={!canPurchase}
+            >
+              Consultar por WhatsApp
+            </button>
           </div>
 
-          {/* Stock Status */}
-          {selectedTalla && (
-            <div className="p-4 rounded-lg bg-muted/50">
-              {isInStock ? (
-                <div className="flex items-center gap-2 text-green-600">
-                  <div className="w-2 h-2 bg-green-600 rounded-full"></div>
-                  <span className="text-sm font-medium">En stock</span>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2 text-red-600">
-                  <div className="w-2 h-2 bg-red-600 rounded-full"></div>
-                  <span className="text-sm font-medium">Agotado en esta talla</span>
+          {producto.fotos_medidas?.length > 0 && (
+            <div className="store-section">
+              <button
+                type="button"
+                className="store-accordion-trigger"
+                onClick={() => setMedidasOpen((o) => !o)}
+              >
+                Guía de tallas
+                <span className="text-stone-400">{medidasOpen ? "−" : "+"}</span>
+              </button>
+              {medidasOpen && (
+                <div className="relative mt-4 aspect-square max-w-xs overflow-hidden rounded-lg bg-stone-100">
+                  <Image
+                    src={producto.fotos_medidas[0].url}
+                    alt={`Guía de medidas — ${producto.nombre}`}
+                    fill
+                    className="object-contain p-2"
+                    sizes="320px"
+                  />
                 </div>
               )}
             </div>
           )}
 
-          {/* Puntos Importantes */}
-          <div className="p-3 lg:p-4 rounded-lg bg-red-50 border border-red-200">
-            <h3 className="font-semibold mb-3 lg:mb-4 text-red-600 text-sm lg:text-base">⚠️ PUNTOS IMPORTANTES</h3>
-            <div className="space-y-2 lg:space-y-3 text-muted-foreground text-xs lg:text-sm">
-              <div className="flex items-start gap-2">
-                <span className="text-red-500 font-bold">•</span>
-                <p><strong>EL PRECIO POR MAYOR ES A PARTIR DE 4 UNIDADES DE UN SOLO MODELO</strong> (SE COMBINA TALLAS Y COLORES).</p>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="text-red-500 font-bold">•</span>
-                <p><strong>SI DESEA 3 MODELOS DIFERENTES SOLO OBTIENES DESCUENTO.</strong></p>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="text-red-500 font-bold">•</span>
-                <p><strong>NO HAY CAMBIO DE TALLA NI COLOR UNA VEZ ABIERTO EL OJAL DE LA PRENDA.</strong></p>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="text-red-500 font-bold">•</span>
-                <p><strong>FIJARSE EN LAS TALLAS Y COLORES QUE SE ESPECIFICAN AL LADO DERECHO.</strong></p>
-              </div>
-            </div>
+          <div className="store-section">
+            <button
+              type="button"
+              className="store-accordion-trigger"
+              onClick={() => setNotasOpen((o) => !o)}
+            >
+              Información de compra
+              <span className="text-stone-400">{notasOpen ? "−" : "+"}</span>
+            </button>
+            {notasOpen && (
+              <ul className="mt-4 list-disc space-y-2 pl-4 text-sm leading-relaxed text-stone-600">
+                <li>
+                  Precio por mayor desde 4 unidades del mismo modelo (tallas y colores se
+                  combinan).
+                </li>
+                <li>Con 3 modelos distintos aplica solo el descuento vigente.</li>
+                <li>Sin cambio de talla o color tras abrir el ojal.</li>
+                <li>Confirma talla y color antes de pagar.</li>
+              </ul>
+            )}
           </div>
+        </div>
+      </div>
+    </article>
+  )
+}
+
+function ProductDetailSkeleton() {
+  return (
+    <div className="animate-pulse">
+      <div className="mb-6 h-4 w-56 rounded bg-stone-200" />
+      <div className="grid gap-8 lg:grid-cols-2">
+        <div className="aspect-[3/4] rounded-lg bg-stone-100" />
+        <div className="space-y-4">
+          <div className="h-8 w-2/3 rounded bg-stone-200" />
+          <div className="h-4 w-full rounded bg-stone-100" />
+          <div className="h-10 w-full rounded-md bg-stone-200" />
         </div>
       </div>
     </div>
@@ -389,36 +350,7 @@ function ProductDetailContent({ producto }: ProductDetailProps) {
 
 export function ProductDetail({ producto }: ProductDetailProps) {
   return (
-    <ClientOnly fallback={
-      <div className="max-w-7xl mx-auto">
-        {/* Skeleton loading para el producto */}
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Skeleton para la imagen */}
-          <div className="lg:w-1/2">
-            <div className="aspect-square bg-gray-200 rounded-lg mb-4"></div>
-            <div className="flex gap-2">
-              <div className="w-16 h-16 bg-gray-200 rounded"></div>
-              <div className="w-16 h-16 bg-gray-200 rounded"></div>
-              <div className="w-16 h-16 bg-gray-200 rounded"></div>
-            </div>
-          </div>
-          
-          {/* Skeleton para la información */}
-          <div className="lg:w-1/2 space-y-6">
-            <div className="h-8 bg-gray-200 rounded"></div>
-            <div className="h-6 bg-gray-200 rounded w-3/4"></div>
-            <div className="h-4 bg-gray-200 rounded"></div>
-            <div className="h-4 bg-gray-200 rounded w-5/6"></div>
-            <div className="h-4 bg-gray-200 rounded w-4/6"></div>
-            <div className="h-12 bg-gray-200 rounded w-1/2"></div>
-            <div className="flex gap-4">
-              <div className="h-10 bg-gray-200 rounded w-32"></div>
-              <div className="h-10 bg-gray-200 rounded w-32"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    }>
+    <ClientOnly fallback={<ProductDetailSkeleton />}>
       <ProductDetailContent producto={producto} />
     </ClientOnly>
   )

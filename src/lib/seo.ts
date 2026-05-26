@@ -75,14 +75,13 @@ export function buildPageMetadata({
 
 export function buildRootMetadata(): Metadata {
   const siteUrl = getSiteUrl()
-  const title =
-    'Excusas Jeans | Tienda de Jeans Online | excusasjeans.com'
+  const title = SITE_NAME
 
   return {
     metadataBase: new URL(siteUrl),
     title: {
       default: title,
-      template: `%s | ${SITE_NAME}`,
+      template: '%s',
     },
     description: DEFAULT_DESCRIPTION,
     keywords: [...SEO_KEYWORDS],

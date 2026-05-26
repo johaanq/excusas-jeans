@@ -3,6 +3,11 @@
 import { useState, useCallback } from 'react'
 import { adminQuery } from '@/lib/admin-api'
 import { useAuth } from '@/contexts/auth-context'
+import {
+  getAdminActionColor,
+  getAdminActionIcon,
+  getAdminActionLabel,
+} from '@/lib/admin-actions'
 
 export interface AdminLog {
   id: string
@@ -105,60 +110,6 @@ export function useAdminLogs() {
     }
   }, [])
 
-  const getActionIcon = (action: string) => {
-    switch (action) {
-      case 'login':
-        return '🔐'
-      case 'logout':
-        return '🚪'
-      case 'create_producto':
-        return '➕'
-      case 'update_producto':
-        return '✏️'
-      case 'delete_producto':
-        return '🗑️'
-      case 'create_admin':
-        return '👤'
-      case 'update_admin':
-        return '👤✏️'
-      case 'delete_admin':
-        return '👤🗑️'
-      case 'view_logs':
-        return '📋'
-      case 'export_data':
-        return '📤'
-      default:
-        return '📝'
-    }
-  }
-
-  const getActionColor = (action: string) => {
-    switch (action) {
-      case 'login':
-        return 'text-green-600 bg-green-50'
-      case 'logout':
-        return 'text-gray-600 bg-gray-50'
-      case 'create_producto':
-        return 'text-blue-600 bg-blue-50'
-      case 'update_producto':
-        return 'text-yellow-600 bg-yellow-50'
-      case 'delete_producto':
-        return 'text-red-600 bg-red-50'
-      case 'create_admin':
-        return 'text-purple-600 bg-purple-50'
-      case 'update_admin':
-        return 'text-purple-600 bg-purple-50'
-      case 'delete_admin':
-        return 'text-red-600 bg-red-50'
-      case 'view_logs':
-        return 'text-indigo-600 bg-indigo-50'
-      case 'export_data':
-        return 'text-orange-600 bg-orange-50'
-      default:
-        return 'text-gray-600 bg-gray-50'
-    }
-  }
-
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
     return date.toLocaleString('es-ES', {
@@ -177,8 +128,9 @@ export function useAdminLogs() {
     totalCount,
     fetchLogs,
     logAction,
-    getActionIcon,
-    getActionColor,
-    formatDate
+    getActionIcon: getAdminActionIcon,
+    getActionLabel: getAdminActionLabel,
+    getActionColor: getAdminActionColor,
+    formatDate,
   }
 }

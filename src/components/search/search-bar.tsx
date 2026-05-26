@@ -83,10 +83,10 @@ export function SearchBar({ isScrolled }: SearchBarProps) {
         variant="ghost"
         size="icon"
         onClick={handleSearchClick}
-        className={`transition-colors ${
-          isScrolled 
-            ? 'text-gray-600 hover:text-gray-900' 
-            : 'text-white hover:text-gray-200'
+        className={`transition-colors hover:bg-transparent ${
+          isScrolled
+            ? 'text-gray-600 hover:text-gray-700'
+            : 'text-white hover:text-white/90'
         }`}
         title="Buscar productos"
       >

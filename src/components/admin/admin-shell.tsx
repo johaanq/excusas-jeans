@@ -4,19 +4,20 @@ import { useState } from "react"
 import { usePathname } from "next/navigation"
 import { AdminSidebar } from "./admin-sidebar"
 import { AdminNavbar } from "./admin-navbar"
+import { toInternalAdminPath } from "@/lib/admin-host"
 
 const PAGE_META: Record<string, { title: string; description?: string }> = {
   "/admin": {
     title: "Dashboard",
-    description: "Resumen general de tu tienda",
+    description: "Ventas, pedidos y catálogo",
+  },
+  "/admin/pedidos": {
+    title: "Pedidos",
+    description: "Lima y provincia · Culqi",
   },
   "/admin/products": {
     title: "Productos",
     description: "Catálogo y estados de publicación",
-  },
-  "/admin/create": {
-    title: "Nuevo producto",
-    description: "Agregar artículo al catálogo",
   },
   "/admin/administradores": {
     title: "Administradores",
@@ -29,10 +30,11 @@ const PAGE_META: Record<string, { title: string; description?: string }> = {
 }
 
 function getPageMeta(pathname: string) {
-  if (pathname.startsWith("/admin/edit/")) {
+  const internal = toInternalAdminPath(pathname)
+  if (internal.startsWith("/admin/edit/")) {
     return { title: "Editar producto", description: "Actualizar datos del catálogo" }
   }
-  return PAGE_META[pathname] ?? { title: "Administración", description: "Excusas Jeans" }
+  return PAGE_META[internal] ?? { title: "Administración", description: "Excusas Jeans" }
 }
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
@@ -41,17 +43,19 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const meta = getPageMeta(pathname)
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <div className="flex min-h-screen bg-[#f4f4f5]">
       <AdminSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      <div className="flex min-w-0 flex-1 flex-col lg:pl-0">
+      <div className="flex min-h-screen min-w-0 flex-1 flex-col">
         <AdminNavbar
           title={meta.title}
           description={meta.description}
           onMenuClick={() => setSidebarOpen(true)}
         />
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
+        <main className="flex-1 overflow-x-hidden">
+          <div className="mx-auto w-full max-w-[1400px] p-4 sm:p-6 lg:p-8">{children}</div>
+        </main>
       </div>
     </div>
   )

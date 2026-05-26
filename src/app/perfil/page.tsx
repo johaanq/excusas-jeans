@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert } from '@/components/ui/alert'
 import { Textarea } from '@/components/ui/textarea'
 import { Save, User, MapPin } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
+import { insforgeClient } from '@/lib/insforge-client'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
 
@@ -180,7 +180,7 @@ export default function PerfilPage() {
         return
       }
 
-      const { error: updateError } = await supabase
+      const { error: updateError } = await insforgeClient
         .from('usuarios')
         .update({
           nombre: formData.nombre,

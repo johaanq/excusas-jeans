@@ -1,11 +1,12 @@
 import type React from "react"
-import { GeistSans } from "geist/font/sans"
 import { GeistMono } from "geist/font/mono"
+import { brandFont } from "@/lib/brand-font"
 import { Analytics } from "@vercel/analytics/next"
 import { Suspense } from "react"
 import { CartProvider } from "@/hooks/use-cart"
 import { AuthProvider } from "@/contexts/auth-context"
 import { UserAuthProvider } from "@/contexts/user-auth-context"
+import { AuthVerificationProvider } from "@/components/auth/auth-verification-provider"
 import { ServiceWorkerRegister } from "@/components/service-worker-register"
 import { JsonLd } from "@/components/seo/json-ld"
 import { buildRootMetadata, buildSiteJsonLd } from "@/lib/seo"
@@ -41,13 +42,15 @@ export default function RootLayout({
         <meta name="color-scheme" content="light" />
         <JsonLd data={buildSiteJsonLd()} />
       </head>
-      <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable} antialiased`}>
+      <body className={`font-sans ${brandFont.variable} ${GeistMono.variable} antialiased`}>
         <AuthProvider>
           <UserAuthProvider>
-            <CartProvider>
-              <Suspense fallback={null}>{children}</Suspense>
-              <ServiceWorkerRegister />
-            </CartProvider>
+            <AuthVerificationProvider>
+              <CartProvider>
+                <Suspense fallback={null}>{children}</Suspense>
+                <ServiceWorkerRegister />
+              </CartProvider>
+            </AuthVerificationProvider>
           </UserAuthProvider>
         </AuthProvider>
         <Analytics />

@@ -6,9 +6,14 @@ import Link from "next/link"
 import { useUserAuth } from "@/contexts/user-auth-context"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { PasswordInput } from "@/components/ui/password-input"
 import { Label } from "@/components/ui/label"
 import { Alert } from "@/components/ui/alert"
 import { cn } from "@/lib/utils"
+import {
+  buildHomeVerifyUrl,
+  setPendingVerifyEmail,
+} from "@/components/auth/auth-verification-gate"
 
 type AuthTab = "login" | "register"
 
@@ -17,8 +22,8 @@ export function UserAuthPanel() {
   const router = useRouter()
   const { login, register, isAuthenticated } = useUserAuth()
 
-  const initialTab = searchParams.get("tab") === "register" ? "register" : "login"
-  const [tab, setTab] = useState<AuthTab>(initialTab)
+  const [tab, setTab] = useState<AuthTab>("login")
+  const [hydrated, setHydrated] = useState(false)
   const [error, setError] = useState("")
   const [message, setMessage] = useState("")
   const [isLoading, setIsLoading] = useState(false)
@@ -33,8 +38,16 @@ export function UserAuthPanel() {
   })
 
   useEffect(() => {
+    setHydrated(true)
+
     const msg = searchParams.get("message")
     if (msg) setMessage(msg)
+
+    const emailParam = searchParams.get("email")
+    if (emailParam) {
+      setLoginData((p) => ({ ...p, email: emailParam }))
+    }
+
     const t = searchParams.get("tab")
     if (t === "register" || t === "login") setTab(t)
   }, [searchParams])
@@ -55,6 +68,9 @@ export function UserAuthPanel() {
     const result = await login(loginData)
     if (result.success) {
       router.replace(searchParams.get("redirect") || "/")
+    } else if (result.needsVerification && result.email) {
+      setPendingVerifyEmail(result.email)
+      router.replace(buildHomeVerifyUrl(result.email))
     } else {
       setError(result.error || "Error al iniciar sesión")
     }
@@ -86,11 +102,29 @@ export function UserAuthPanel() {
     })
 
     if (result.success) {
-      router.push(`/auth/verify?email=${encodeURIComponent(registerData.email)}`)
+      if (result.needsVerification && result.email) {
+        setPendingVerifyEmail(registerData.email)
+        router.replace(buildHomeVerifyUrl(registerData.email))
+      } else {
+        router.replace(searchParams.get("redirect") || "/")
+      }
     } else {
       setError(result.error || "Error al crear la cuenta")
     }
     setIsLoading(false)
+  }
+
+  if (!hydrated) {
+    return (
+      <div className="mx-auto w-full max-w-md" aria-hidden="true">
+        <div className="mb-8 text-center">
+          <div className="mx-auto h-8 w-40 rounded bg-gray-200" />
+          <div className="mx-auto mt-3 h-4 w-64 rounded bg-gray-100" />
+        </div>
+        <div className="mb-6 h-12 rounded-lg bg-gray-100" />
+        <div className="h-[28rem] animate-pulse rounded-2xl bg-gray-100" />
+      </div>
+    )
   }
 
   return (
@@ -141,9 +175,7 @@ export function UserAuthPanel() {
             {error}
           </Alert>
         )}
-        {message && (
-          <Alert className="mb-4">{message}</Alert>
-        )}
+        {message && <Alert className="mb-4">{message}</Alert>}
 
         {tab === "login" ? (
           <form onSubmit={handleLogin} className="space-y-5">
@@ -162,15 +194,21 @@ export function UserAuthPanel() {
             </div>
             <div>
               <Label htmlFor="login-password">Contraseña</Label>
-              <Input
+              <PasswordInput
                 id="login-password"
-                type="password"
                 autoComplete="current-password"
                 value={loginData.password}
                 onChange={(e) => setLoginData((p) => ({ ...p, password: e.target.value }))}
-                className="mt-1.5 h-11"
                 required
               />
+              <p className="mt-2 text-right">
+                <Link
+                  href="/auth/forgot-password"
+                  className="text-sm font-medium text-gray-600 hover:text-gray-900 hover:underline"
+                >
+                  ¿Olvidaste tu contraseña?
+                </Link>
+              </p>
             </div>
             <Button type="submit" disabled={isLoading} className="h-11 w-full text-base">
               {isLoading ? "Entrando..." : "Entrar"}
@@ -211,23 +249,23 @@ export function UserAuthPanel() {
             </div>
             <div>
               <Label htmlFor="reg-password">Contraseña</Label>
-              <Input
+              <PasswordInput
                 id="reg-password"
-                type="password"
+                autoComplete="new-password"
                 value={registerData.password}
                 onChange={(e) => setRegisterData((p) => ({ ...p, password: e.target.value }))}
-                className="mt-1.5 h-11"
                 required
               />
             </div>
             <div>
               <Label htmlFor="reg-confirm">Confirmar contraseña</Label>
-              <Input
+              <PasswordInput
                 id="reg-confirm"
-                type="password"
+                autoComplete="new-password"
                 value={registerData.confirmPassword}
-                onChange={(e) => setRegisterData((p) => ({ ...p, confirmPassword: e.target.value }))}
-                className="mt-1.5 h-11"
+                onChange={(e) =>
+                  setRegisterData((p) => ({ ...p, confirmPassword: e.target.value }))
+                }
                 required
               />
             </div>

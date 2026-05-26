@@ -7,14 +7,14 @@ import { Label } from '@/components/ui/label'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { LoadingSpinner } from '@/components/ui/loading-spinner'
-import { X, Plus, ArrowLeft } from 'lucide-react'
+import { X, Plus } from 'lucide-react'
 import { adminQuery } from '@/lib/admin-api'
-import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/auth-context'
-import { uploadFileWithUniqueName, extractStoragePath, deleteFilesFromStorage } from '@/lib/storage-utils'
+import { extractStoragePath } from '@/lib/storage-utils'
+import { adminUploadFile, adminDeleteFiles } from '@/lib/admin-storage'
 import { useToast } from '@/components/ui/toast'
 import { useConfirmDialog } from '@/components/ui/confirm-dialog'
-import Link from 'next/link'
+import { useAdminPath } from '@/hooks/use-admin-path'
 
 interface ProductFormData {
   nombre: string
@@ -41,9 +41,22 @@ interface ExistingData {
 
 const TALLAS_DISPONIBLES = ['26', '28', '30', '32', '34']
 
-export function ProductEditForm({ productId }: { productId: string }) {
+type ProductEditFormProps = {
+  productId: string
+  embedded?: boolean
+  onSuccess?: () => void
+  onCancel?: () => void
+}
+
+export function ProductEditForm({
+  productId,
+  embedded = false,
+  onSuccess,
+  onCancel,
+}: ProductEditFormProps) {
   const { success, error, ToastContainer } = useToast()
   const { showConfirm, ConfirmDialogComponent } = useConfirmDialog()
+  const { adminPath } = useAdminPath()
   const [formData, setFormData] = useState<ProductFormData>({
     nombre: '',
     precioUnitario: '',
@@ -223,7 +236,7 @@ export function ProductEditForm({ productId }: { productId: string }) {
 
       const path = extractStoragePath(fotoUrl)
       if (path) {
-        await deleteFilesFromStorage(supabase, 'productos', [path])
+        await adminDeleteFiles('productos', [path])
       }
 
       await loadProductData()
@@ -256,7 +269,7 @@ export function ProductEditForm({ productId }: { productId: string }) {
 
       const path = extractStoragePath(fotoUrl)
       if (path) {
-        await deleteFilesFromStorage(supabase, 'productos', [path])
+        await adminDeleteFiles('productos', [path])
       }
 
       // Actualizar estado local - recargar datos del producto
@@ -270,7 +283,7 @@ export function ProductEditForm({ productId }: { productId: string }) {
   }
 
   const uploadImage = async (file: File, path: string): Promise<string> => {
-    return uploadFileWithUniqueName(supabase, 'productos', file, path)
+    return adminUploadFile('productos', file, path)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -424,9 +437,12 @@ export function ProductEditForm({ productId }: { productId: string }) {
       }
 
       success('¡Producto actualizado exitosamente!', `El producto "${formData.nombre}" ha sido actualizado correctamente.`)
-      
-      // Redirigir a la lista de productos
-      window.location.href = '/admin/products'
+
+      if (onSuccess) {
+        onSuccess()
+      } else {
+        window.location.href = adminPath('/products')
+      }
 
     } catch (err) {
       console.error('Error updating producto:', err)
@@ -441,21 +457,7 @@ export function ProductEditForm({ productId }: { productId: string }) {
     return <LoadingSpinner />
   }
 
-  return (
-    <div>
-      <Link
-        href="/admin/products"
-        className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Volver a productos
-      </Link>
-
-      <Card className="border-slate-200/80 p-6 shadow-sm">
-        <h2 className="mb-6 text-xl font-bold text-slate-900">
-          Editar: {existingData?.producto?.nombre}
-        </h2>
-        
+  const formContent = (
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Estado del producto */}
           <div>
@@ -727,21 +729,49 @@ export function ProductEditForm({ productId }: { productId: string }) {
             )}
           </div>
 
-          {/* Botón de envío */}
-          <Button 
-            type="submit" 
-            disabled={isSubmitting || !formData.nombre || !formData.precioUnitario || !formData.precioMayor || formData.tallas.length === 0 || formData.colores.length === 0}
-            className="w-full"
+          <div
+            className={
+              embedded
+                ? "flex flex-col-reverse gap-2 border-t border-slate-100 pt-4 sm:flex-row sm:justify-end"
+                : ""
+            }
           >
-            {isSubmitting ? 'Actualizando Producto...' : 'Actualizar Producto'}
-          </Button>
+            {embedded && onCancel && (
+              <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
+                Cancelar
+              </Button>
+            )}
+            <Button
+              type="submit"
+              disabled={
+                isSubmitting ||
+                !formData.nombre ||
+                !formData.precioUnitario ||
+                !formData.precioMayor ||
+                formData.tallas.length === 0 ||
+                formData.colores.length === 0
+              }
+              className={embedded ? "sm:min-w-[160px]" : "w-full"}
+            >
+              {isSubmitting ? "Actualizando…" : "Guardar cambios"}
+            </Button>
+          </div>
         </form>
-      </Card>
-      
-      {/* Toast Container */}
+  )
+
+  return (
+    <div>
+      {embedded ? (
+        formContent
+      ) : (
+        <Card className="border-slate-200/80 p-6 shadow-sm">
+          <h2 className="mb-6 text-xl font-bold text-slate-900">
+            Editar: {existingData?.producto?.nombre}
+          </h2>
+          {formContent}
+        </Card>
+      )}
       <ToastContainer />
-      
-      {/* Confirm Dialog */}
       <ConfirmDialogComponent />
     </div>
   )

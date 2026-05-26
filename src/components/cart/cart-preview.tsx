@@ -4,9 +4,11 @@ import { useState, useRef, useEffect } from "react"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { ShoppingBag, MessageCircle, Eye } from "lucide-react"
+import { ShoppingBag, MessageCircle, Eye, CreditCard } from "lucide-react"
+import Link from "next/link"
 import { useCart } from "@/hooks/use-cart"
 import { generateWhatsAppMessage, openWhatsApp } from "@/lib/utils"
+import { WHATSAPP_NUMBER_E164 } from "@/lib/site"
 import { useUserAuth } from "@/contexts/user-auth-context"
 import Image from "next/image"
 
@@ -84,7 +86,7 @@ export function CartPreview({ isScrolled = false, onOpenCart }: CartPreviewProps
     } : undefined
 
     const message = generateWhatsAppMessage(items, customerInfo)
-    await openWhatsApp('51934762253', message)
+    await openWhatsApp(WHATSAPP_NUMBER_E164, message)
     clearCart()
     setIsVisible(false)
     setTimeout(() => setShowPreview(false), 300)
@@ -106,10 +108,10 @@ export function CartPreview({ isScrolled = false, onOpenCart }: CartPreviewProps
       <Button 
         variant="ghost" 
         size="icon" 
-        className={`relative transition-colors ${
-          isScrolled 
-            ? 'text-gray-600 hover:text-gray-900' 
-            : 'text-white hover:text-gray-200'
+        className={`relative transition-colors hover:bg-transparent ${
+          isScrolled
+            ? 'text-gray-600 hover:text-gray-700'
+            : 'text-white hover:text-white/90'
         }`}
         onClick={handleOpenCart}
       >
@@ -189,13 +191,20 @@ export function CartPreview({ isScrolled = false, onOpenCart }: CartPreviewProps
               Ver Carrito
             </Button>
             
-            <Button 
+            <Button asChild className="w-full" size="sm">
+              <Link href="/checkout">
+                <CreditCard className="w-4 h-4 mr-2" />
+                Pagar en línea
+              </Link>
+            </Button>
+            <Button
               onClick={handleWhatsAppOrder}
-              className="w-full bg-green-500 hover:bg-green-600"
+              variant="outline"
+              className="w-full"
               size="sm"
             >
               <MessageCircle className="w-4 h-4 mr-2" />
-              Pedir por WhatsApp
+              Consultar por WhatsApp
             </Button>
           </div>
         </div>

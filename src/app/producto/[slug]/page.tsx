@@ -4,10 +4,11 @@ import { Header } from "@/components/header"
 import { ProductDetail } from "@/components/product-detail"
 import { JsonLd } from "@/components/seo/json-ld"
 import { hasPublicInsforgeKey } from "@/lib/insforge"
-import { supabase } from "@/lib/supabase"
+import { insforgeClient } from "@/lib/insforge-client"
+import { mapProductoFromRow, PRODUCTOS_ACTIVE_SELECT, type ProductoRow } from "@/lib/producto-db"
 import { buildPageMetadata, buildProductJsonLd } from "@/lib/seo"
 import { SITE_NAME } from "@/lib/site"
-import type { Producto, SupabaseColor, SupabaseFotoColor, SupabaseTalla, SupabaseFotoMedida } from "@/data/productos"
+import type { Producto } from "@/data/productos"
 
 interface ProductPageProps {
   params: Promise<{
@@ -21,45 +22,9 @@ async function getProductoBySlug(slug: string): Promise<Producto | null> {
   }
 
   try {
-    const { data: productoData, error: productoError } = await supabase
+    const { data: productoData, error: productoError } = await insforgeClient
       .from('productos')
-      .select(`
-        id,
-        nombre,
-        slug,
-        descripcion,
-        precio,
-        precio_mayor,
-        estado,
-        foto_principal,
-        created_at,
-        colores (
-          id,
-          producto_id,
-          nombre,
-          hex,
-          created_at,
-          fotos_color (
-            id,
-            color_id,
-            url,
-            created_at
-          )
-        ),
-        tallas (
-          id,
-          producto_id,
-          talla,
-          en_stock,
-          created_at
-        ),
-        fotos_medidas (
-          id,
-          producto_id,
-          url,
-          created_at
-        )
-      `)
+      .select(PRODUCTOS_ACTIVE_SELECT)
       .eq('slug', slug)
       .eq('estado', 'activo')
       .single()
@@ -68,46 +33,7 @@ async function getProductoBySlug(slug: string): Promise<Producto | null> {
 
     if (!productoData) return null
 
-    // Transformar los datos al formato esperado
-    const productoFormateado: Producto = {
-      id: productoData.id,
-      nombre: productoData.nombre,
-      slug: productoData.slug,
-      descripcion: productoData.descripcion || '',
-      precio: productoData.precio,
-      precio_mayor: productoData.precio_mayor,
-      estado: productoData.estado,
-      foto_principal: productoData.foto_principal || '',
-      created_at: productoData.created_at,
-      colores: productoData.colores?.map((color: SupabaseColor) => ({
-        id: color.id,
-        producto_id: color.producto_id,
-        nombre: color.nombre,
-        hex: color.hex,
-        fotos: color.fotos_color?.map((foto: SupabaseFotoColor) => ({
-          id: foto.id,
-          color_id: foto.color_id,
-          url: foto.url,
-          created_at: foto.created_at
-        })) || [],
-        created_at: color.created_at
-      })) || [],
-      tallas: productoData.tallas?.map((talla: SupabaseTalla) => ({
-        id: talla.id,
-        producto_id: talla.producto_id,
-        talla: talla.talla,
-        en_stock: talla.en_stock,
-        created_at: talla.created_at
-      })) || [],
-      fotos_medidas: productoData.fotos_medidas?.map((foto: SupabaseFotoMedida) => ({
-        id: foto.id,
-        producto_id: foto.producto_id,
-        url: foto.url,
-        created_at: foto.created_at
-      })) || []
-    }
-
-    return productoFormateado
+    return mapProductoFromRow(productoData as ProductoRow)
   } catch (err) {
     console.error('Error fetching producto by slug:', err)
     return null
@@ -120,90 +46,15 @@ async function getProductos(): Promise<Producto[]> {
   }
 
   try {
-    const { data: productosData, error: productosError } = await supabase
+    const { data: productosData, error: productosError } = await insforgeClient
       .from('productos')
-      .select(`
-        id,
-        nombre,
-        slug,
-        descripcion,
-        precio,
-        precio_mayor,
-        estado,
-        foto_principal,
-        created_at,
-        colores (
-          id,
-          producto_id,
-          nombre,
-          hex,
-          created_at,
-          fotos_color (
-            id,
-            color_id,
-            url,
-            created_at
-          )
-        ),
-        tallas (
-          id,
-          producto_id,
-          talla,
-          en_stock,
-          created_at
-        ),
-        fotos_medidas (
-          id,
-          producto_id,
-          url,
-          created_at
-        )
-      `)
+      .select(PRODUCTOS_ACTIVE_SELECT)
       .eq('estado', 'activo')
       .order('created_at', { ascending: false })
 
     if (productosError) throw productosError
 
-    // Transformar los datos al formato esperado
-    const productosFormateados: Producto[] = productosData?.map(producto => ({
-      id: producto.id,
-      nombre: producto.nombre,
-      slug: producto.slug,
-      descripcion: producto.descripcion || '',
-      precio: producto.precio,
-      precio_mayor: producto.precio_mayor,
-      estado: producto.estado,
-      foto_principal: producto.foto_principal || '',
-      created_at: producto.created_at,
-      colores: producto.colores?.map((color: SupabaseColor) => ({
-        id: color.id,
-        producto_id: color.producto_id,
-        nombre: color.nombre,
-        hex: color.hex,
-        fotos: color.fotos_color?.map((foto: SupabaseFotoColor) => ({
-          id: foto.id,
-          color_id: foto.color_id,
-          url: foto.url,
-          created_at: foto.created_at
-        })) || [],
-        created_at: color.created_at
-      })) || [],
-      tallas: producto.tallas?.map((talla: SupabaseTalla) => ({
-        id: talla.id,
-        producto_id: talla.producto_id,
-        talla: talla.talla,
-        en_stock: talla.en_stock,
-        created_at: talla.created_at
-      })) || [],
-      fotos_medidas: producto.fotos_medidas?.map((foto: SupabaseFotoMedida) => ({
-        id: foto.id,
-        producto_id: foto.producto_id,
-        url: foto.url,
-        created_at: foto.created_at
-      })) || []
-    })) || []
-
-    return productosFormateados
+    return productosData?.map((row) => mapProductoFromRow(row as ProductoRow)) ?? []
   } catch (err) {
     console.error('Error fetching productos:', err)
     return []
@@ -246,10 +97,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[var(--store-bg)] text-stone-900">
       <JsonLd data={buildProductJsonLd(producto)} />
       <Header />
-      <main className="container mx-auto px-4 pt-20 sm:pt-24 md:pt-28 pb-4 sm:pb-6 md:pb-8">
+      <main className="store-container-wide pb-16 pt-20 sm:pt-24 md:pt-28">
         <ProductDetail producto={producto} />
       </main>
     </div>

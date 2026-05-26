@@ -11,6 +11,7 @@ import { ClientOnly } from "@/components/ui/client-only"
 import { SearchBar } from "@/components/search/search-bar"
 import { useState, useEffect } from "react"
 import { usePathname } from "next/navigation"
+import { WHATSAPP_URL } from "@/lib/site"
 
 function HeaderContent() {
   const [isScrolled, setIsScrolled] = useState(false)
@@ -91,7 +92,7 @@ function HeaderContent() {
 
                 {/* WhatsApp icon */}
                 <Link 
-                  href="https://wa.me/51934762253" 
+                  href={WHATSAPP_URL} 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="flex items-center justify-center w-10 h-10 transition-colors text-white hover:text-green-200 drop-shadow-lg"
@@ -110,7 +111,7 @@ function HeaderContent() {
               <ClientOnly fallback={
                 <div className="w-10 h-10 bg-gray-200 rounded"></div>
               }>
-                <CartPreview onOpenCart={() => setIsCartOpen(true)} />
+                <CartPreview isScrolled={isScrolled} onOpenCart={() => setIsCartOpen(true)} />
               </ClientOnly>
 
               {/* User authentication */}
@@ -121,7 +122,11 @@ function HeaderContent() {
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    className="transition-colors text-white hover:text-gray-200"
+                    className={`transition-colors hover:bg-transparent ${
+                      isScrolled
+                        ? 'text-gray-600 hover:text-gray-700'
+                        : 'text-white hover:text-white/90'
+                    }`}
                     title={isAuthenticated ? user?.nombre ?? "Mi cuenta" : "Iniciar sesión"}
                   >
                     <User className="w-5 h-5" />
@@ -133,7 +138,7 @@ function HeaderContent() {
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="md:hidden transition-colors text-white hover:text-gray-200"
+                className="md:hidden transition-colors text-white hover:bg-transparent hover:text-white/90"
                 onClick={() => setIsMobileMenuOpen(true)}
               >
                 <Menu className="h-5 w-5" />
@@ -213,7 +218,7 @@ function HeaderContent() {
                     </svg>
                   </Link>
                   <Link 
-                    href="https://wa.me/51934762253" 
+                    href={WHATSAPP_URL} 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="flex items-center justify-center w-10 h-10 text-gray-600 hover:text-green-600"

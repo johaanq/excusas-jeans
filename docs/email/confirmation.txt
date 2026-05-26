@@ -1,0 +1,11 @@
+Excusas Jeans
+
+Confirma tu correo
+
+Guarda tu carrito y completa tus datos de envío. Abre este enlace para activar tu cuenta:
+
+{{ link }}
+
+El enlace caduca en 24 horas. Si no creaste una cuenta, ignora este mensaje.
+
+excusasjeans.com

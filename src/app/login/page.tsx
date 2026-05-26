@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useAuth } from "@/contexts/auth-context"
+import { useAdminPath } from "@/hooks/use-admin-path"
+import { getSiteUrl } from "@/lib/site"
 
 export default function AdminLoginPage() {
   const [username, setUsername] = useState("")
@@ -17,6 +19,7 @@ export default function AdminLoginPage() {
   const [error, setError] = useState("")
   const { login } = useAuth()
   const router = useRouter()
+  const { adminPath } = useAdminPath()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -26,7 +29,7 @@ export default function AdminLoginPage() {
     try {
       const success = await login(username, password)
       if (success) {
-        router.push("/admin")
+        router.push(adminPath("/"))
       } else {
         setError("Usuario o contraseña incorrectos")
       }
@@ -48,7 +51,7 @@ export default function AdminLoginPage() {
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-black/30" />
 
         <div className="relative z-10 p-10 xl:p-14">
-          <Link href="/" className="inline-flex items-center gap-3">
+          <Link href={getSiteUrl()} className="inline-flex items-center gap-3">
             <Image src="/logo-excusas.png" alt="Excusas Jeans" width={44} height={44} className="rounded-md" />
             <span className="text-lg font-semibold tracking-wide text-white">Excusas Jeans</span>
           </Link>
@@ -69,7 +72,7 @@ export default function AdminLoginPage() {
       <div className="flex flex-1 flex-col justify-center bg-[#fafafa] px-6 py-12 sm:px-12 lg:px-16 xl:px-24">
         <div className="mx-auto w-full max-w-[380px]">
           <div className="mb-10 lg:hidden">
-            <Link href="/" className="inline-flex items-center gap-2.5">
+            <Link href={getSiteUrl()} className="inline-flex items-center gap-2.5">
               <Image src="/logo-excusas.png" alt="Excusas" width={36} height={36} />
               <span className="font-semibold text-gray-900">Excusas Jeans</span>
             </Link>
@@ -135,10 +138,10 @@ export default function AdminLoginPage() {
           </form>
 
           <div className="mt-10 flex flex-col gap-3 border-t border-gray-200 pt-8 text-sm text-gray-500">
-            <Link href="/" className="font-medium text-gray-700 hover:text-gray-900">
+            <Link href={getSiteUrl()} className="font-medium text-gray-700 hover:text-gray-900">
               ← Volver a la tienda
             </Link>
-            <Link href="/cuenta" className="text-gray-500 hover:text-gray-700">
+            <Link href={`${getSiteUrl()}/cuenta`} className="text-gray-500 hover:text-gray-700">
               ¿Eres cliente? Inicia sesión aquí
             </Link>
           </div>

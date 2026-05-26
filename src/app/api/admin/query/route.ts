@@ -1,19 +1,11 @@
 import { NextResponse } from 'next/server'
 import { getInsforgeAdmin } from '@/lib/insforge-admin'
+import { verifyAdminCredentials } from '@/lib/admin-verify-server'
 import type { AdminQueryPayload } from '@/lib/admin-api'
 
 type Body = {
   credentials: { username: string; password: string }
   payload: AdminQueryPayload
-}
-
-async function verifyAdmin(username: string, password: string) {
-  const admin = getInsforgeAdmin()
-  const { data, error } = await admin.database.rpc('verificar_admin_credenciales', {
-    p_username: username,
-    p_password: password,
-  })
-  return !error && Array.isArray(data) && data.length > 0
 }
 
 export async function POST(request: Request) {
@@ -25,7 +17,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Credenciales requeridas' }, { status: 401 })
     }
 
-    if (!(await verifyAdmin(credentials.username, credentials.password))) {
+    if (!(await verifyAdminCredentials(credentials.username, credentials.password))) {
       return NextResponse.json({ error: 'Credenciales inválidas' }, { status: 401 })
     }
 
