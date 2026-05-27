@@ -65,7 +65,7 @@ export async function POST(request: Request) {
     }
 
     const admin = getInsforgeAdmin()
-    const { data, error } = await admin.database.rpc('crear_perfil_usuario', {
+    const { error } = await admin.database.rpc('crear_perfil_usuario', {
       p_id: userId,
       p_nombre: nombre,
       p_email: email,
@@ -73,10 +73,28 @@ export async function POST(request: Request) {
     })
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 })
+      const msg = error.message.toLowerCase()
+      const alreadyExists =
+        msg.includes('duplicate') || msg.includes('unique') || msg.includes('ya existe')
+      if (!alreadyExists) {
+        return NextResponse.json({ error: error.message }, { status: 400 })
+      }
     }
 
-    return NextResponse.json({ data })
+    const { data: user, error: fetchError } = await admin.database
+      .from('usuarios')
+      .select('*')
+      .eq('id', userId)
+      .maybeSingle()
+
+    if (fetchError || !user) {
+      return NextResponse.json(
+        { error: fetchError?.message || 'Perfil creado pero no se pudo leer' },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json({ data, user })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Error interno'
     if (message.includes('INSFORGE_ADMIN_API_KEY')) {

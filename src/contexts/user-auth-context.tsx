@@ -30,12 +30,30 @@ function nombreDesdeAuthUser(
   return local || 'Cliente'
 }
 
-async function fetchUsuarioRow(userId: string): Promise<Usuario | null> {
+async function fetchUsuarioRow(
+  userId: string,
+  accessToken?: string | null
+): Promise<Usuario | null> {
+  if (accessToken) {
+    try {
+      const res = await fetch('/api/user/me', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      })
+      if (res.ok) {
+        const json = await res.json()
+        if (json.user?.id === userId) return json.user as Usuario
+      }
+    } catch (err) {
+      console.error('fetchUsuarioRow /api/user/me:', err)
+    }
+  }
+
   const { data, error } = await insforgeClient
     .from('usuarios')
     .select('*')
     .eq('id', userId)
-    .single()
+    .maybeSingle()
+
   if (data && !error) return data
   return null
 }
@@ -44,7 +62,7 @@ async function createUserProfile(
   userId: string,
   data: Pick<RegisterData, 'nombre' | 'email' | 'telefono'>,
   accessToken: string | null
-): Promise<{ ok: boolean; error?: string }> {
+): Promise<{ ok: boolean; user?: Usuario; error?: string }> {
   const profileRes = await fetch('/api/user/profile', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -57,14 +75,19 @@ async function createUserProfile(
     }),
   })
   const profileJson = await profileRes.json()
-  if (profileRes.ok) return { ok: true }
+  if (profileRes.ok) {
+    return { ok: true, user: profileJson.user as Usuario | undefined }
+  }
 
   const msg = (profileJson.error as string) || ''
   const alreadyInDb =
     msg.toLowerCase().includes('duplicate') ||
     msg.toLowerCase().includes('unique') ||
     msg.toLowerCase().includes('ya existe')
-  if (alreadyInDb) return { ok: true }
+  if (alreadyInDb) {
+    const user = accessToken ? await fetchUsuarioRow(userId, accessToken) : null
+    return { ok: true, user: user ?? undefined }
+  }
 
   return { ok: false, error: msg || 'Error al crear perfil de usuario' }
 }
@@ -75,7 +98,7 @@ async function repairMissingUsuarioProfile(
   accessToken: string | null,
   extras: { nombre?: string; telefono?: string | null }
 ): Promise<Usuario | null> {
-  const existing = await fetchUsuarioRow(userId)
+  const existing = await fetchUsuarioRow(userId, accessToken)
   if (existing) return existing
 
   const profile = await createUserProfile(
@@ -93,7 +116,9 @@ async function repairMissingUsuarioProfile(
     return null
   }
 
-  return fetchUsuarioRow(userId)
+  if (profile.user) return profile.user
+
+  return fetchUsuarioRow(userId, accessToken)
 }
 
 interface UserAuthContextType {
@@ -131,13 +156,14 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
       const authUser = await fetchCurrentAuthUser()
 
       if (authUser) {
-        let userData = await fetchUsuarioRow(authUser.id)
+        const token = getStoredUserToken()
+        let userData = await fetchUsuarioRow(authUser.id, token)
 
         if (!userData) {
           userData = await repairMissingUsuarioProfile(
             authUser.id,
             authUser.email,
-            getStoredUserToken(),
+            token,
             { nombre: nombreDesdeAuthUser(authUser) }
           )
         }
@@ -200,14 +226,17 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
 
     if (accessToken) {
       saveStoredUserToken(accessToken)
-      setUser({
-        id: authUser.id,
-        nombre: data.nombre,
-        email: data.email,
-        telefono: data.telefono,
-        created_at: authUser.createdAt,
-        updated_at: authUser.updatedAt,
-      })
+      const userRow =
+        profile.user ??
+        (await fetchUsuarioRow(authUser.id, accessToken)) ?? {
+          id: authUser.id,
+          nombre: data.nombre,
+          email: data.email,
+          telefono: data.telefono,
+          created_at: authUser.createdAt,
+          updated_at: authUser.updatedAt,
+        }
+      setUser(userRow)
       setIsAuthenticated(true)
       await loadCart(authUser.id)
     }
@@ -332,13 +361,14 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
       if (authData?.user && authData?.session) {
         saveStoredUserToken(authData.session.access_token)
 
-        let userData = await fetchUsuarioRow(authData.user.id)
+        const token = authData.session.access_token
+        let userData = await fetchUsuarioRow(authData.user.id, token)
 
         if (!userData) {
           userData = await repairMissingUsuarioProfile(
             authData.user.id,
             authData.user.email,
-            authData.session.access_token,
+            token,
             { nombre: nombreDesdeAuthUser(authData.user) }
           )
         }
