@@ -1,7 +1,7 @@
 import { DISTRITOS_LIMA } from './peru-locations'
 
 /** Envío hasta agencia (provincia). El flete en destino no está incluido. */
-export const SHIPPING_PROVINCIA_AGENCY = 10
+export const SHIPPING_PROVINCIA_AGENCY = 9
 
 /** Delivery en distritos de Lima Metropolitana. */
 export const SHIPPING_LIMA_METROPOLITANA = 15
