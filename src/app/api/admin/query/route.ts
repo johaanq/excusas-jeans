@@ -73,7 +73,7 @@ export async function POST(request: Request) {
     }
 
     if (payload.op === 'update') {
-      let query = applyFilters(table.update(payload.data as Record<string, unknown>))
+      const query = applyFilters(table.update(payload.data as Record<string, unknown>))
       const result = await query.select(payload.select ?? '*')
       if (result.error) {
         return NextResponse.json({ error: result.error.message }, { status: 400 })
@@ -82,7 +82,7 @@ export async function POST(request: Request) {
     }
 
     if (payload.op === 'delete') {
-      let query = applyFilters(table.delete())
+      const query = applyFilters(table.delete())
       const result = await query
       if (result.error) {
         return NextResponse.json({ error: result.error.message }, { status: 400 })
