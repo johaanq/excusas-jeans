@@ -31,13 +31,26 @@ export async function POST(request: Request) {
 
     const table = admin.database.from(payload.table)
 
-    if (payload.op === 'select') {
-      let query = table.select(payload.select ?? '*')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const applyFilters = (query: any) => {
+      let q = query
       if (payload.match) {
         for (const [key, value] of Object.entries(payload.match)) {
-          query = query.eq(key, value)
+          q = q.eq(key, value)
         }
       }
+      if (payload.matchIn) {
+        for (const [key, values] of Object.entries(payload.matchIn)) {
+          if (values.length > 0) {
+            q = q.in(key, values)
+          }
+        }
+      }
+      return q
+    }
+
+    if (payload.op === 'select') {
+      let query = applyFilters(table.select(payload.select ?? '*'))
       if (payload.order) {
         query = query.order(payload.order.column, {
           ascending: payload.order.ascending ?? true,
@@ -60,12 +73,7 @@ export async function POST(request: Request) {
     }
 
     if (payload.op === 'update') {
-      let query = table.update(payload.data as Record<string, unknown>)
-      if (payload.match) {
-        for (const [key, value] of Object.entries(payload.match)) {
-          query = query.eq(key, value)
-        }
-      }
+      let query = applyFilters(table.update(payload.data as Record<string, unknown>))
       const result = await query.select(payload.select ?? '*')
       if (result.error) {
         return NextResponse.json({ error: result.error.message }, { status: 400 })
@@ -74,12 +82,7 @@ export async function POST(request: Request) {
     }
 
     if (payload.op === 'delete') {
-      let query = table.delete()
-      if (payload.match) {
-        for (const [key, value] of Object.entries(payload.match)) {
-          query = query.eq(key, value)
-        }
-      }
+      let query = applyFilters(table.delete())
       const result = await query
       if (result.error) {
         return NextResponse.json({ error: result.error.message }, { status: 400 })

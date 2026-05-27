@@ -1,5 +1,13 @@
 import { NextResponse } from 'next/server'
-import { getLimaShippingCost, getProvinciaShippingNote, isLimaProvincia } from '@/lib/shipping'
+import {
+  getLimaShippingCost,
+  getLimaShippingMethodLabel,
+  getLimaZona,
+  getProvinciaShippingCost,
+  getProvinciaShippingMethodLabel,
+  getProvinciaShippingNote,
+  isLimaProvincia,
+} from '@/lib/shipping'
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
@@ -15,20 +23,30 @@ export async function GET(request: Request) {
       return NextResponse.json({
         tipo_envio: 'lima',
         costo_envio: null,
-        mensaje: 'Selecciona tu distrito para ver el costo de envío en Lima.',
+        metodo: null,
+        lima_zona: null,
+        mensaje: 'Selecciona tu distrito para ver el método y costo de envío.',
       })
     }
     const costo = getLimaShippingCost(distrito)
+    const zona = getLimaZona(distrito)
+    const metodo = getLimaShippingMethodLabel(distrito)
+    const plazo = zona === 'metropolitana' ? 'Entrega en 24–48 h' : 'Entrega en 48–72 h'
     return NextResponse.json({
       tipo_envio: 'lima',
       costo_envio: costo,
-      mensaje: `Envío a ${distrito}: S/ ${costo.toFixed(2)}`,
+      metodo,
+      lima_zona: zona,
+      mensaje: `${metodo} · ${plazo}`,
     })
   }
 
+  const costo = getProvinciaShippingCost()
   return NextResponse.json({
     tipo_envio: 'provincia',
-    costo_envio: 0,
+    costo_envio: costo,
+    metodo: getProvinciaShippingMethodLabel(),
+    lima_zona: null,
     mensaje: getProvinciaShippingNote(),
   })
 }

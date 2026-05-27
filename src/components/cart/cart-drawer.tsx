@@ -1,164 +1,130 @@
 "use client"
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
-import { ShoppingBag, Plus, Minus, Trash2, MessageCircle, CreditCard } from "lucide-react"
+import { useCallback, useMemo } from "react"
 import Link from "next/link"
+import { ShoppingBag, MessageCircle, CreditCard } from "lucide-react"
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { useCart } from "@/hooks/use-cart"
 import { generateWhatsAppMessage, openWhatsApp } from "@/lib/utils"
 import { WHATSAPP_NUMBER_E164 } from "@/lib/site"
-import Image from "next/image"
 import { useUserAuth } from "@/contexts/user-auth-context"
+import { CartLineItem } from "@/components/cart/cart-line-item"
 
 interface CartDrawerProps {
-  isScrolled?: boolean
   isOpen?: boolean
   onOpenChange?: (open: boolean) => void
 }
 
-export function CartDrawer({ isOpen: externalIsOpen, onOpenChange }: CartDrawerProps) {
-  const { items, updateQuantity, removeItem, getTotalPrice, clearCart } = useCart()
+export function CartDrawer({ isOpen = false, onOpenChange }: CartDrawerProps) {
+  const { items, totalItems, totalPrice, updateQuantity, removeItem, clearCart } =
+    useCart()
   const { user, isAuthenticated } = useUserAuth()
-  const [internalIsOpen, setInternalIsOpen] = useState(false)
-  
-  const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen
-  const setIsOpen = onOpenChange || setInternalIsOpen
 
-  const handleWhatsAppOrder = async () => {
+  const close = useCallback(() => onOpenChange?.(false), [onOpenChange])
+
+  const handleWhatsAppOrder = useCallback(async () => {
     if (items.length === 0) return
+    const customerInfo = isAuthenticated
+      ? {
+          nombre: user?.nombre || "",
+          dni: user?.dni || "",
+          telefono: user?.telefono || "",
+          provincia: user?.provincia || "",
+          distrito: user?.distrito || "",
+          direccion: user?.direccion || "",
+          referencia: user?.referencia || "",
+          codigo_postal: user?.codigo_postal || "",
+          empresa_envio: user?.empresa_envio || "",
+          sede_envio: user?.sede_envio || "",
+        }
+      : undefined
 
-    // Usar información del perfil si está disponible
-    const customerInfo = isAuthenticated ? {
-      nombre: user?.nombre || '',
-      dni: user?.dni || '',
-      telefono: user?.telefono || '',
-      provincia: user?.provincia || '',
-      distrito: user?.distrito || '',
-      direccion: user?.direccion || '',
-      referencia: user?.referencia || '',
-      codigo_postal: user?.codigo_postal || '',
-      empresa_envio: user?.empresa_envio || '',
-      sede_envio: user?.sede_envio || ''
-    } : undefined
-
-    const message = generateWhatsAppMessage(items, customerInfo)
-    await openWhatsApp(WHATSAPP_NUMBER_E164, message)
+    await openWhatsApp(
+      WHATSAPP_NUMBER_E164,
+      generateWhatsAppMessage(items, customerInfo)
+    )
     clearCart()
-    setIsOpen(false)
-  }
+    close()
+  }, [items, isAuthenticated, user, clearCart, close])
+
+  const itemCountLabel = useMemo(() => {
+    if (totalItems === 1) return "1 artículo"
+    return `${totalItems} artículos`
+  }, [totalItems])
 
   return (
-    <Sheet open={isOpen} onOpenChange={setIsOpen}>
-
-      <SheetContent className="w-full sm:max-w-lg">
-        <SheetHeader>
-          <SheetTitle className="text-lg sm:text-xl">Carrito de Compras</SheetTitle>
+    <Sheet open={isOpen} onOpenChange={onOpenChange}>
+      <SheetContent className="flex w-full flex-col gap-0 p-0 sm:max-w-md">
+        <SheetHeader className="shrink-0 border-b border-stone-200 px-5 py-4 text-left">
+          <SheetTitle className="text-lg font-semibold text-stone-900">
+            Tu carrito
+          </SheetTitle>
+          {totalItems > 0 && (
+            <p className="text-sm text-stone-500">{itemCountLabel}</p>
+          )}
         </SheetHeader>
 
-        <div className="flex flex-col h-full">
-          {items.length === 0 ? (
-            <div className="flex-1 flex items-center justify-center">
-              <div className="text-center">
-                <ShoppingBag className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">Tu carrito está vacío</p>
+        {items.length === 0 ? (
+          <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-stone-100">
+              <ShoppingBag className="h-8 w-8 text-stone-400" strokeWidth={1.5} />
+            </div>
+            <div>
+              <p className="font-medium text-stone-900">Carrito vacío</p>
+              <p className="mt-1 text-sm text-stone-500">
+                Explora el catálogo y agrega tus modelos favoritos.
+              </p>
+            </div>
+            <Link
+              href="/catalogo"
+              onClick={close}
+              className="store-btn-primary max-w-xs px-8"
+            >
+              Ver catálogo
+            </Link>
+          </div>
+        ) : (
+          <>
+            <ul className="flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 py-4">
+              {items.map((item) => (
+                <CartLineItem
+                  key={`${item.producto.id}-${item.color.id}-${item.talla}`}
+                  item={item}
+                  onUpdateQuantity={updateQuantity}
+                  onRemove={removeItem}
+                />
+              ))}
+            </ul>
+
+            <div className="shrink-0 border-t border-stone-200 bg-stone-50 px-5 py-5">
+              <div className="mb-4 flex items-baseline justify-between">
+                <span className="text-sm font-medium text-stone-600">Total</span>
+                <span className="text-xl font-bold tabular-nums text-[var(--store-denim-dark)]">
+                  S/ {totalPrice.toLocaleString("es-PE", { minimumFractionDigits: 2 })}
+                </span>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <Link
+                  href="/checkout"
+                  onClick={close}
+                  className="store-btn-primary inline-flex h-11 items-center justify-center gap-2"
+                >
+                  <CreditCard className="h-4 w-4" aria-hidden />
+                  Pagar en línea
+                </Link>
+                <button
+                  type="button"
+                  onClick={handleWhatsAppOrder}
+                  className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md border border-stone-300 bg-white text-sm font-medium text-stone-800 transition-colors hover:bg-stone-100"
+                >
+                  <MessageCircle className="h-4 w-4" aria-hidden />
+                  Consultar por WhatsApp
+                </button>
               </div>
             </div>
-          ) : (
-            <>
-              <div className="flex-1 overflow-y-auto py-4 space-y-3 sm:space-y-4">
-                {items.map((item) => (
-                  <div
-                    key={`${item.producto.id}-${item.color.id}-${item.talla}`}
-                    className="flex gap-3 sm:gap-4 p-3 sm:p-4 border border-border rounded-lg"
-                  >
-                    <div className="w-16 h-16 sm:w-20 sm:h-20 relative rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-                      <Image
-                        src="/carritoIMG.png"
-                        alt="Producto en carrito"
-                        width={40}
-                        height={40}
-                        className="object-contain sm:w-12 sm:h-12"
-                      />
-                    </div>
-
-                    <div className="flex-1 space-y-2 min-w-0">
-                      <div>
-                        <h4 className="font-medium line-clamp-1 text-sm sm:text-base">{item.producto.nombre}</h4>
-                        <p className="text-xs sm:text-sm text-muted-foreground">
-                          {item.color.nombre} - Talla {item.talla}
-                        </p>
-                        {item.producto.precio && (
-                          <p className="text-xs sm:text-sm font-medium">S/{item.producto.precio.toFixed(2)}</p>
-                        )}
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1 sm:gap-2">
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-6 w-6 sm:h-8 sm:w-8 bg-transparent"
-                            onClick={() =>
-                              updateQuantity(item.producto.id, item.color.id, item.talla, item.cantidad - 1)
-                            }
-                          >
-                            <Minus className="w-3 h-3" />
-                          </Button>
-
-                          <span className="w-6 sm:w-8 text-center text-xs sm:text-sm font-medium">{item.cantidad}</span>
-
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-6 w-6 sm:h-8 sm:w-8 bg-transparent"
-                            onClick={() =>
-                              updateQuantity(item.producto.id, item.color.id, item.talla, item.cantidad + 1)
-                            }
-                          >
-                            <Plus className="w-3 h-3" />
-                          </Button>
-                        </div>
-
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 sm:h-8 sm:w-8 text-destructive"
-                          onClick={() => removeItem(item.producto.id, item.color.id, item.talla)}
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="border-t pt-3 sm:pt-4 space-y-3 sm:space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-base sm:text-lg font-semibold">Total:</span>
-                  <span className="text-base sm:text-lg font-bold text-primary">S/{getTotalPrice().toFixed(2)}</span>
-                </div>
-
-                <Button asChild className="w-full" size="lg">
-                  <Link href="/checkout" onClick={() => setIsOpen(false)}>
-                    <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                    <span className="text-sm sm:text-base">Pagar en línea</span>
-                  </Link>
-                </Button>
-                <Button
-                  onClick={handleWhatsAppOrder}
-                  variant="outline"
-                  className="w-full"
-                  size="lg"
-                >
-                  <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                  <span className="text-sm sm:text-base">Consultar por WhatsApp</span>
-                </Button>
-              </div>
-            </>
-          )}
-        </div>
+          </>
+        )}
       </SheetContent>
     </Sheet>
   )

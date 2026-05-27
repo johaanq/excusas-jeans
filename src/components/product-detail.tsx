@@ -35,6 +35,7 @@ function ProductDetailContent({ producto }: ProductDetailProps) {
   const [selectedTalla, setSelectedTalla] = useState("")
   const [cantidad, setCantidad] = useState(1)
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
+  const [colorPickedByUser, setColorPickedByUser] = useState(false)
   const [medidasOpen, setMedidasOpen] = useState(false)
   const [notasOpen, setNotasOpen] = useState(false)
 
@@ -70,15 +71,21 @@ function ProductDetailContent({ producto }: ProductDetailProps) {
     cantidad >= 4 && producto.precio_mayor ? producto.precio_mayor : producto.precio
 
   useEffect(() => {
-    if (selectedColor?.fotos?.length) {
-      const idx = allImages.findIndex(
-        (img) => img.type === "color" && img.colorId === selectedColor.id
-      )
-      if (idx !== -1) setSelectedImageIndex(idx)
-    } else if (selectedColorIndex === -1 && allImages.length > 0) {
-      setSelectedImageIndex(0)
-    }
-  }, [selectedColor, allImages, selectedColorIndex])
+    setSelectedImageIndex(0)
+    setColorPickedByUser(false)
+    setSelectedColorIndex(producto.colores.length > 0 ? 0 : -1)
+    setSelectedTalla("")
+    setCantidad(1)
+  }, [producto.id, producto.colores.length])
+
+  /** Al cambiar color manualmente, ir a su primera foto; al entrar, quedarse en la imagen 0. */
+  useEffect(() => {
+    if (!colorPickedByUser || !selectedColor?.fotos?.length) return
+    const idx = allImages.findIndex(
+      (img) => img.type === "color" && img.colorId === selectedColor.id
+    )
+    if (idx !== -1) setSelectedImageIndex(idx)
+  }, [selectedColor, allImages, colorPickedByUser])
 
   const selectedTallaObj = producto.tallas.find((t) => t.talla === selectedTalla)
   const isInStock = selectedTallaObj?.en_stock ?? false
@@ -126,6 +133,7 @@ function ProductDetailContent({ producto }: ProductDetailProps) {
   return (
     <article>
       <StoreBreadcrumb
+        className="mb-8 md:mb-10"
         items={[
           { label: "Inicio", href: "/" },
           { label: "Catálogo", href: "/catalogo" },
@@ -136,17 +144,18 @@ function ProductDetailContent({ producto }: ProductDetailProps) {
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(280px,380px)] lg:gap-12">
         <div className="flex flex-col gap-3 md:flex-row md:gap-4">
           {allImages.length > 1 && (
-            <div className="order-2 flex gap-2 overflow-x-auto pb-1 md:order-1 md:w-16 md:shrink-0 md:flex-col md:overflow-y-auto md:overflow-x-visible">
+            <div className="order-2 flex gap-2 overflow-x-auto pb-1 md:order-1 md:w-[4.25rem] md:shrink-0 md:flex-col md:gap-2.5 md:overflow-y-auto md:overflow-x-visible md:p-0.5">
               {allImages.map((image, index) => (
                 <button
                   key={`${image.colorId ?? "p"}-${index}`}
                   type="button"
                   onClick={() => setSelectedImageIndex(index)}
+                  aria-current={selectedImageIndex === index ? "true" : undefined}
                   className={cn(
-                    "relative aspect-[3/4] w-14 shrink-0 overflow-hidden rounded-md bg-stone-100 md:w-full",
+                    "relative aspect-[3/4] w-14 shrink-0 overflow-hidden rounded-md bg-stone-100 transition-all md:w-full",
                     selectedImageIndex === index
-                      ? "ring-2 ring-[var(--store-denim-dark)] ring-offset-1"
-                      : "opacity-75 hover:opacity-100"
+                      ? "border-2 border-stone-900 shadow-md ring-2 ring-stone-900/15 ring-offset-2 ring-offset-[var(--store-bg)]"
+                      : "border border-stone-200 opacity-80 hover:border-stone-400 hover:opacity-100"
                   )}
                 >
                   <Image src={image.url} alt="" fill sizes="64px" className="object-cover" />
@@ -168,7 +177,7 @@ function ProductDetailContent({ producto }: ProductDetailProps) {
           </div>
         </div>
 
-        <div className="lg:sticky lg:top-28 lg:self-start">
+        <div className="min-w-0 lg:sticky lg:top-28 lg:self-start">
           <p className="store-kicker">Excusas Jeans</p>
           <h1 className="store-title mt-1">{producto.nombre}</h1>
           {producto.descripcion && (
@@ -196,7 +205,10 @@ function ProductDetailContent({ producto }: ProductDetailProps) {
                   <button
                     key={color.id}
                     type="button"
-                    onClick={() => setSelectedColorIndex(index)}
+                    onClick={() => {
+                      setColorPickedByUser(true)
+                      setSelectedColorIndex(index)
+                    }}
                     className={cn(
                       "store-chip rounded-md",
                       selectedColorIndex === index && "store-chip-active"
@@ -335,7 +347,7 @@ function ProductDetailContent({ producto }: ProductDetailProps) {
 function ProductDetailSkeleton() {
   return (
     <div className="animate-pulse">
-      <div className="mb-6 h-4 w-56 rounded bg-stone-200" />
+      <div className="mb-10 h-4 w-56 rounded bg-stone-200" />
       <div className="grid gap-8 lg:grid-cols-2">
         <div className="aspect-[3/4] rounded-lg bg-stone-100" />
         <div className="space-y-4">

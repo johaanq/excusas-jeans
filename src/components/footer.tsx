@@ -107,9 +107,10 @@ export const Footer = memo(function Footer() {
               </Link>
               <Link
                 href="/ayuda/politica-cambios-devoluciones"
+                title="Política de cambios"
                 className="block text-gray-400 hover:text-white transition-colors text-sm"
               >
-                Cambios y devoluciones
+                Política de cambios
               </Link>
               <Link
                 href="/ayuda/libro-reclamaciones"

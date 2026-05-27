@@ -116,7 +116,7 @@ export function HorizontalProductCarousel({ productos, isLoading, error }: Horiz
       {/* Contenedor de scroll */}
       <div
         ref={scrollContainerRef}
-        className="-mx-1 flex gap-4 overflow-x-auto overflow-y-hidden pb-4 pl-1 pr-1 scrollbar-hide"
+        className="-mx-1 flex gap-3 overflow-x-auto overflow-y-hidden pb-4 pl-1 pr-4 scrollbar-hide sm:gap-4"
         onScroll={checkScrollButtons}
       >
         {productos.map((producto, index) => {

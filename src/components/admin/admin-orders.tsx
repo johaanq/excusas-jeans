@@ -80,7 +80,7 @@ export function AdminOrders() {
       <div>
         <h1 className="text-2xl font-bold text-slate-900">Pedidos en línea</h1>
         <p className="text-slate-600 text-sm mt-1">
-          Pagos con Culqi. Lima: delivery por distrito. Provincia: Shalom (flete en agencia).
+          Pagos con Culqi. Lima: metropolitana S/15 · departamento S/20. Provincia: S/10 hasta agencia Shalom.
         </p>
       </div>
 

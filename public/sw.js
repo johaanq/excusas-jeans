@@ -20,6 +20,8 @@ function shouldSkipRequest(request, url) {
   if (url.origin !== self.location.origin) return true
   if (SKIP_CACHE_PATHS.some((path) => url.pathname.startsWith(path))) return true
   if (url.pathname.startsWith('/_next/')) return true
+  if (request.destination === 'video' || request.destination === 'audio') return true
+  if (/\.(mp4|webm|mov)(\?|$)/i.test(url.pathname)) return true
   return false
 }
 

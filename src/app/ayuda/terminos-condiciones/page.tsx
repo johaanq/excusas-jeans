@@ -61,14 +61,14 @@ export default function TerminosCondicionesPage() {
             <section>
               <h2 className="text-xl font-semibold text-gray-900 mb-3">4. Envíos</h2>
               <p className="mb-3">
-                <strong>Lima:</strong> delivery a domicilio. El costo de envío en Lima se calcula
-                según el distrito indicado en el checkout y se paga junto con el pedido. Los plazos
-                de entrega son estimados y pueden variar.
+                <strong>Lima:</strong> delivery a domicilio. Lima Metropolitana: S/ 15; Lima
+                Departamento: S/ 20 (según distrito en el checkout). Se paga junto con el pedido.
+                Los plazos de entrega son estimados y pueden variar.
               </p>
               <p className="mb-3">
-                <strong>Provincia:</strong> envíos por Shalom a través de la web. El pago online
-                cubre solo los productos; el flete de la agencia no está incluido y lo pagas al
-                recoger en Shalom. Si no hay agencia Shalom en tu localidad, contáctanos por
+                <strong>Provincia:</strong> envíos por Shalom. El pago online incluye S/ 10 por llevar
+                el pedido hasta la agencia; el flete en destino lo pagas al recoger. Si no hay
+                agencia Shalom en tu localidad, contáctanos por
                 WhatsApp para coordinar otra empresa de transporte.
               </p>
               <p>
@@ -92,7 +92,7 @@ export default function TerminosCondicionesPage() {
               <p>
                 Detalle completo en nuestra{" "}
                 <a href="/ayuda/politica-cambios-devoluciones" className="text-green-700 hover:underline">
-                  política de cambios y devoluciones
+                  política de cambios
                 </a>
                 . Para solicitar un cambio, escribe por WhatsApp al {WHATSAPP_NUMBER_DISPLAY} con tu
                 número de pedido.

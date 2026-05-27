@@ -3,32 +3,36 @@
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { Header } from "@/components/header"
-import { Footer } from "@/components/footer"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Alert } from "@/components/ui/alert"
-import { useCart } from "@/hooks/use-cart"
-import { useUserAuth } from "@/contexts/user-auth-context"
-import { PROVINCIAS_PERU, DISTRITOS_LIMA } from "@/lib/peru-locations"
-import { isLimaProvincia, getProvinciaShippingNote } from "@/lib/shipping"
-import { WHATSAPP_URL } from "@/lib/site"
-import { Loader2, CreditCard } from "lucide-react"
+import { Loader2, Lock } from "lucide-react"
+import { CheckoutHeader } from "@/components/checkout/checkout-header"
+import { CheckoutOrderSummary } from "@/components/checkout/checkout-order-summary"
+import { CheckoutPolicyModals } from "@/components/checkout/checkout-policy-modals"
 import {
   CulqiCheckoutButton,
   type CulqiPaySession,
 } from "@/components/checkout/culqi-checkout"
+import { Alert } from "@/components/ui/alert"
+import { useCart } from "@/hooks/use-cart"
+import { useUserAuth } from "@/contexts/user-auth-context"
+import { PROVINCIAS_PERU, DISTRITOS_LIMA } from "@/lib/peru-locations"
+import { isLimaProvincia } from "@/lib/shipping"
+import { WHATSAPP_URL } from "@/lib/site"
+import { cn } from "@/lib/utils"
+
+const inputClass =
+  "flex h-11 w-full rounded-md border border-stone-300 bg-white px-3 text-sm text-stone-900 shadow-sm transition-colors placeholder:text-stone-400 focus:border-stone-800 focus:outline-none focus:ring-1 focus:ring-stone-800"
+
+const labelClass = "mb-1.5 block text-sm font-medium text-stone-800"
 
 export default function CheckoutPage() {
   const router = useRouter()
-  const { items, getTotalPrice, clearCart } = useCart()
+  const { items, totalPrice, clearCart } = useCart()
   const { user, isAuthenticated, isLoading: authLoading } = useUserAuth()
 
   const [error, setError] = useState("")
   const [shippingCost, setShippingCost] = useState<number | null>(null)
   const [shippingNote, setShippingNote] = useState("")
+  const [shippingMethod, setShippingMethod] = useState<string | null>(null)
 
   const [form, setForm] = useState({
     nombre: "",
@@ -66,15 +70,22 @@ export default function CheckoutPage() {
   }, [user])
 
   const esLima = isLimaProvincia(form.provincia)
-  const subtotal = getTotalPrice()
-  const envio = esLima ? (shippingCost ?? 0) : 0
-  const total = subtotal + (esLima && shippingCost != null ? shippingCost : esLima ? 0 : 0)
+  const subtotal = totalPrice
 
   const canPay = useMemo(() => {
     if (!items.length) return false
-    if (!form.nombre || !form.email || !form.telefono || !form.provincia) return false
+    if (
+      !form.nombre.trim() ||
+      !form.email.trim() ||
+      !form.telefono.trim() ||
+      !form.dni.trim() ||
+      !form.provincia
+    ) {
+      return false
+    }
+    if (shippingCost == null) return false
     if (esLima) {
-      return Boolean(form.distrito && form.direccion && shippingCost != null)
+      return Boolean(form.distrito && form.direccion.trim())
     }
     return Boolean(form.sede_envio.trim())
   }, [items.length, form, esLima, shippingCost])
@@ -88,7 +99,10 @@ export default function CheckoutPage() {
       const data = await res.json()
       if (res.ok) {
         setShippingNote(data.mensaje ?? "")
-        setShippingCost(data.costo_envio ?? 0)
+        setShippingMethod(data.metodo ?? null)
+        setShippingCost(
+          typeof data.costo_envio === "number" ? data.costo_envio : null
+        )
       }
     }
     fetchQuote()
@@ -99,7 +113,7 @@ export default function CheckoutPage() {
     nombre_cliente: form.nombre.trim(),
     email_cliente: form.email.trim(),
     telefono: form.telefono.trim(),
-    dni: form.dni.trim() || undefined,
+    dni: form.dni.trim(),
     provincia: form.provincia,
     distrito: esLima ? form.distrito : undefined,
     direccion: esLima ? form.direccion : undefined,
@@ -147,238 +161,294 @@ export default function CheckoutPage() {
 
   if (authLoading || items.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+      <div className="flex min-h-screen items-center justify-center bg-stone-50">
+        <Loader2 className="h-8 w-8 animate-spin text-stone-400" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
-      <main className="container mx-auto px-4 py-8 md:py-12 mt-20 max-w-5xl">
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Checkout</h1>
-        <p className="text-gray-600 mb-8">
-          Pago seguro con Culqi (tarjeta, Yape y billeteras). En provincia el envío es por Shalom
-          (flete no incluido en el pago online).
-        </p>
+    <div className="min-h-screen bg-stone-50">
+      <CheckoutHeader />
 
+      <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10 lg:py-12">
         {error && (
           <Alert variant="destructive" className="mb-6">
             {error}
           </Alert>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-          <div className="lg:col-span-3 space-y-6 bg-white rounded-lg border p-6">
-            <h2 className="font-semibold text-lg">Datos de envío</h2>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="sm:col-span-2">
-                <Label htmlFor="nombre">Nombre completo</Label>
-                <Input
-                  id="nombre"
-                  value={form.nombre}
-                  onChange={(e) => setForm((f) => ({ ...f, nombre: e.target.value }))}
-                  required
-                />
+        <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1fr_380px] lg:gap-12">
+          <div className="space-y-8">
+            {/* Contacto */}
+            <section>
+              <div className="mb-4 flex items-baseline justify-between gap-4">
+                <h2 className="text-lg font-semibold text-stone-900">Contacto</h2>
+                {!isAuthenticated && (
+                  <Link
+                    href="/cuenta?redirect=/checkout"
+                    className="text-sm text-stone-600 underline-offset-4 hover:text-stone-900 hover:underline"
+                  >
+                    Iniciar sesión
+                  </Link>
+                )}
               </div>
-              <div>
-                <Label htmlFor="email">Correo (cuenta / comprobante de pago)</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={form.email}
-                  onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="telefono">WhatsApp / teléfono</Label>
-                <Input
-                  id="telefono"
-                  value={form.telefono}
-                  onChange={(e) => setForm((f) => ({ ...f, telefono: e.target.value }))}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="dni">DNI (opcional)</Label>
-                <Input
-                  id="dni"
-                  value={form.dni}
-                  onChange={(e) => setForm((f) => ({ ...f, dni: e.target.value }))}
-                />
-              </div>
-              <div>
-                <Label htmlFor="provincia">Provincia</Label>
-                <select
-                  id="provincia"
-                  className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
-                  value={form.provincia}
-                  onChange={(e) =>
-                    setForm((f) => ({
-                      ...f,
-                      provincia: e.target.value,
-                      distrito: "",
-                    }))
-                  }
-                >
-                  {PROVINCIAS_PERU.map((p) => (
-                    <option key={p} value={p}>
-                      {p}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {esLima ? (
-                <>
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="email" className={labelClass}>
+                    Correo electrónico
+                  </label>
+                  <input
+                    id="email"
+                    type="email"
+                    autoComplete="email"
+                    className={inputClass}
+                    value={form.email}
+                    onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
-                    <Label htmlFor="distrito">Distrito (Lima)</Label>
-                    <select
-                      id="distrito"
-                      className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
-                      value={form.distrito}
-                      onChange={(e) => setForm((f) => ({ ...f, distrito: e.target.value }))}
-                    >
-                      <option value="">Seleccionar distrito</option>
-                      {DISTRITOS_LIMA.map((d) => (
-                        <option key={d} value={d}>
-                          {d}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="sm:col-span-2">
-                    <Label htmlFor="direccion">Dirección</Label>
-                    <Input
-                      id="direccion"
-                      value={form.direccion}
-                      onChange={(e) => setForm((f) => ({ ...f, direccion: e.target.value }))}
+                    <label htmlFor="telefono" className={labelClass}>
+                      Teléfono
+                    </label>
+                    <input
+                      id="telefono"
+                      type="tel"
+                      autoComplete="tel"
+                      className={inputClass}
+                      value={form.telefono}
+                      onChange={(e) => setForm((f) => ({ ...f, telefono: e.target.value }))}
                       required
                     />
                   </div>
-                </>
-              ) : (
-                <div className="sm:col-span-2">
-                  <Label htmlFor="sede">Sede Shalom de destino</Label>
-                  <Input
-                    id="sede"
-                    placeholder="Ej: Agencia Shalom — ciudad y dirección de la sede"
-                    value={form.sede_envio}
-                    onChange={(e) => setForm((f) => ({ ...f, sede_envio: e.target.value }))}
+                  <div>
+                    <label htmlFor="dni" className={labelClass}>
+                      DNI o C.E.
+                    </label>
+                    <input
+                      id="dni"
+                      inputMode="numeric"
+                      autoComplete="off"
+                      className={inputClass}
+                      value={form.dni}
+                      onChange={(e) => setForm((f) => ({ ...f, dni: e.target.value }))}
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* Entrega */}
+            <section>
+              <h2 className="mb-4 text-lg font-semibold text-stone-900">Entrega</h2>
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="nombre" className={labelClass}>
+                    Nombre y apellidos
+                  </label>
+                  <input
+                    id="nombre"
+                    autoComplete="name"
+                    className={inputClass}
+                    value={form.nombre}
+                    onChange={(e) => setForm((f) => ({ ...f, nombre: e.target.value }))}
                     required
                   />
-                  <p className="text-xs text-gray-500 mt-2">{getProvinciaShippingNote()}</p>
-                  <p className="text-xs text-amber-700 mt-1">
-                    Si no hay Shalom en tu provincia,{" "}
-                    <a href={WHATSAPP_URL} className="underline" target="_blank" rel="noopener noreferrer">
-                      escríbenos por WhatsApp
-                    </a>{" "}
-                    para otra agencia (Flores u otra).
-                  </p>
                 </div>
-              )}
 
-              <div className="sm:col-span-2">
-                <Label htmlFor="referencia">Referencia (opcional)</Label>
-                <Textarea
-                  id="referencia"
-                  rows={2}
-                  value={form.referencia}
-                  onChange={(e) => setForm((f) => ({ ...f, referencia: e.target.value }))}
-                />
-              </div>
-            </div>
-          </div>
+                <div>
+                  <label htmlFor="provincia" className={labelClass}>
+                    Departamento / provincia
+                  </label>
+                  <select
+                    id="provincia"
+                    className={inputClass}
+                    value={form.provincia}
+                    onChange={(e) =>
+                      setForm((f) => ({
+                        ...f,
+                        provincia: e.target.value,
+                        distrito: "",
+                      }))
+                    }
+                  >
+                    {PROVINCIAS_PERU.map((p) => (
+                      <option key={p} value={p}>
+                        {p}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-lg border p-6 sticky top-24 space-y-4">
-              <h2 className="font-semibold text-lg">Resumen</h2>
-              <ul className="space-y-2 text-sm text-gray-700 max-h-48 overflow-y-auto">
-                {items.map((item) => (
-                  <li
-                    key={`${item.producto.id}-${item.color.id}-${item.talla}`}
-                    className="flex justify-between gap-2"
-                  >
-                    <span className="line-clamp-2">
-                      {item.producto.nombre} · {item.color.nombre} · T{item.talla} ×
-                      {item.cantidad}
-                    </span>
-                    <span className="shrink-0">
-                      S/{((item.producto.precio ?? 0) * item.cantidad).toFixed(2)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-              <div className="border-t pt-3 space-y-1 text-sm">
-                <div className="flex justify-between">
-                  <span>Subtotal</span>
-                  <span>S/{subtotal.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-gray-600">
-                  <span>Envío</span>
-                  <span>
-                    {esLima
-                      ? shippingCost != null
-                        ? `S/${shippingCost.toFixed(2)}`
-                        : "—"
-                      : "No incluido (Shalom)"}
-                  </span>
-                </div>
-                {shippingNote && (
-                  <p className="text-xs text-gray-500 pt-1">{shippingNote}</p>
+                {esLima ? (
+                  <>
+                    <div>
+                      <label htmlFor="distrito" className={labelClass}>
+                        Distrito (Lima)
+                      </label>
+                      <select
+                        id="distrito"
+                        className={inputClass}
+                        value={form.distrito}
+                        onChange={(e) => setForm((f) => ({ ...f, distrito: e.target.value }))}
+                      >
+                        <option value="">Seleccionar distrito</option>
+                        {DISTRITOS_LIMA.map((d) => (
+                          <option key={d} value={d}>
+                            {d}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label htmlFor="direccion" className={labelClass}>
+                        Dirección
+                      </label>
+                      <input
+                        id="direccion"
+                        autoComplete="street-address"
+                        className={inputClass}
+                        value={form.direccion}
+                        onChange={(e) => setForm((f) => ({ ...f, direccion: e.target.value }))}
+                        required
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <div>
+                    <label htmlFor="sede" className={labelClass}>
+                      Sede Shalom de destino
+                    </label>
+                    <input
+                      id="sede"
+                      className={inputClass}
+                      placeholder="Ciudad y dirección de la agencia"
+                      value={form.sede_envio}
+                      onChange={(e) => setForm((f) => ({ ...f, sede_envio: e.target.value }))}
+                      required
+                    />
+                    <p className="mt-2 text-xs leading-relaxed text-stone-500">
+                      Si no hay Shalom en tu zona,{" "}
+                      <a
+                        href={WHATSAPP_URL}
+                        className="font-medium text-stone-700 underline underline-offset-2"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        escríbenos por WhatsApp
+                      </a>{" "}
+                      para coordinar otra agencia.
+                    </p>
+                  </div>
                 )}
-                <div className="flex justify-between font-bold text-base pt-2">
-                  <span>Total a pagar</span>
-                  <span>
-                    S/
-                    {(esLima && shippingCost == null
-                      ? subtotal
-                      : subtotal + (esLima ? shippingCost ?? 0 : 0)
-                    ).toFixed(2)}
-                  </span>
+
+                <div>
+                  <label htmlFor="referencia" className={labelClass}>
+                    Referencia (opcional)
+                  </label>
+                  <textarea
+                    id="referencia"
+                    rows={2}
+                    className={cn(inputClass, "h-auto min-h-[4.5rem] py-2.5")}
+                    value={form.referencia}
+                    onChange={(e) => setForm((f) => ({ ...f, referencia: e.target.value }))}
+                  />
                 </div>
               </div>
-              <CulqiCheckoutButton
-                onPrepare={prepareCulqi}
-                onToken={async (tokenId, session) => {
-                  try {
-                    await chargeCulqi(tokenId, session)
-                  } catch (e) {
-                    setError(e instanceof Error ? e.message : "Error al pagar")
-                  }
-                }}
-                disabled={!canPay}
-              >
-                {({ pay, loading: culqiLoading, ready }) => (
-                  <Button
-                    className="w-full"
-                    size="lg"
-                    disabled={!canPay || culqiLoading || !ready}
-                    onClick={pay}
-                  >
-                    {culqiLoading ? (
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    ) : (
-                      <CreditCard className="h-4 w-4 mr-2" />
-                    )}
-                    Pagar con Culqi
-                  </Button>
-                )}
-              </CulqiCheckoutButton>
-              <p className="text-xs text-gray-500 text-center">
-                Tarjeta, Yape y billeteras según Culqi. Tras el pago te confirmamos por WhatsApp.
+            </section>
+
+            {/* Método de envío */}
+            {shippingMethod && shippingCost != null && (
+              <section>
+                <h2 className="mb-4 text-lg font-semibold text-stone-900">Método de envío</h2>
+                <div className="rounded-lg border-2 border-stone-900 bg-white px-4 py-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold uppercase tracking-wide text-stone-900">
+                        {shippingMethod}
+                      </p>
+                      {shippingNote && (
+                        <p className="mt-1 text-xs leading-relaxed text-stone-500">{shippingNote}</p>
+                      )}
+                    </div>
+                    <p className="shrink-0 text-sm font-semibold tabular-nums text-stone-900">
+                      S/ {shippingCost.toFixed(2)}
+                    </p>
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {/* Pago — pasarela externa (sin formulario de tarjeta en sitio) */}
+            <section className="border-t border-stone-200 pt-8">
+              <h2 className="text-lg font-semibold text-stone-900">Pago</h2>
+              <p className="mt-1 flex items-center gap-1.5 text-sm text-stone-500">
+                <Lock className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                Todas las transacciones son seguras y están encriptadas.
               </p>
-              <Link href="/catalogo" className="block text-center text-sm text-gray-600 hover:underline">
-                Seguir comprando
-              </Link>
-            </div>
+
+              <div className="mt-5 rounded-lg border border-stone-200 bg-white p-4 sm:p-5">
+                <p className="text-sm font-medium text-stone-900">
+                  Tarjeta, Yape y billeteras
+                </p>
+                <p className="mt-1 text-xs leading-relaxed text-stone-500">
+                  Al pulsar el botón se abre la pasarela de pago segura. No guardamos los datos de
+                  tu tarjeta en nuestros servidores.
+                </p>
+
+                <CulqiCheckoutButton
+                  onPrepare={prepareCulqi}
+                  onToken={async (tokenId, session) => {
+                    try {
+                      await chargeCulqi(tokenId, session)
+                    } catch (e) {
+                      setError(e instanceof Error ? e.message : "Error al pagar")
+                    }
+                  }}
+                  disabled={!canPay}
+                >
+                  {({ pay, loading: culqiLoading, ready }) => (
+                    <button
+                      type="button"
+                      className="mt-5 flex h-12 w-full items-center justify-center rounded-md bg-stone-900 text-sm font-semibold text-white transition-colors hover:bg-stone-800 disabled:cursor-not-allowed disabled:opacity-50"
+                      disabled={!canPay || culqiLoading || !ready}
+                      onClick={pay}
+                    >
+                      {culqiLoading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
+                          Procesando…
+                        </>
+                      ) : (
+                        "Pagar ahora"
+                      )}
+                    </button>
+                  )}
+                </CulqiCheckoutButton>
+              </div>
+
+              <CheckoutPolicyModals />
+            </section>
           </div>
+
+          <CheckoutOrderSummary
+            items={items}
+            subtotal={subtotal}
+            shippingCost={shippingCost}
+            shippingMethod={shippingMethod}
+            shippingNote={shippingNote}
+          />
         </div>
+
+        <p className="mt-10 text-center lg:hidden">
+          <Link href="/catalogo" className="text-sm text-stone-600 hover:text-stone-900 hover:underline">
+            ← Seguir comprando
+          </Link>
+        </p>
       </main>
-      <Footer />
     </div>
   )
 }

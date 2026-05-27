@@ -18,6 +18,7 @@ function validateShipping(shipping: ShippingPayload) {
   if (!shipping.nombre_cliente?.trim()) throw new Error('Nombre requerido')
   if (!shipping.email_cliente?.trim()) throw new Error('Correo requerido')
   if (!shipping.telefono?.trim()) throw new Error('Teléfono requerido')
+  if (!shipping.dni?.trim()) throw new Error('DNI o C.E. requerido')
   if (!shipping.provincia?.trim()) throw new Error('Provincia requerida')
 
   const esLima = isLimaProvincia(shipping.provincia)

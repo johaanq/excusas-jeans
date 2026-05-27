@@ -15,6 +15,7 @@ import { adminUploadFile, adminDeleteFiles } from '@/lib/admin-storage'
 import { useToast } from '@/components/ui/toast'
 import { useConfirmDialog } from '@/components/ui/confirm-dialog'
 import { useAdminPath } from '@/hooks/use-admin-path'
+import { syncProductColores } from '@/lib/admin-product-colors'
 
 interface ProductFormData {
   nombre: string
@@ -338,81 +339,19 @@ export function ProductEditForm({
         data: tallasData,
       })
 
-      // 4. Actualizar colores
-      await adminQuery({
-        op: 'delete',
-        table: 'colores',
-        match: { producto_id: productId },
-      })
-
-      // Crear nuevos colores
-      for (let i = 0; i < formData.colores.length; i++) {
-        const color = formData.colores[i]
-        
-        const colorRows = await adminQuery<{ id: string }[]>({
-          op: 'insert',
-          table: 'colores',
-          data: {
-            producto_id: productId,
-            nombre: color,
-            hex: '#000000',
-          },
-          select: '*',
-        })
-        const colorData = colorRows[0]
-        if (!colorData) throw new Error(`Error creando color ${color}`)
-
-        // Subir fotos específicas del color
-        const fotosColorData = []
-        
-        // Agregar fotos específicas del color si las hay
-        const colorConFotos = coloresConFotos.find(c => c.nombre === color)
-        if (colorConFotos && colorConFotos.fotos.length > 0) {
-          for (let j = 0; j < colorConFotos.fotos.length; j++) {
-            const file = colorConFotos.fotos[j]
-            const fileName = `${productId}/colores/${color.toLowerCase().replace(/[^a-z0-9]/g, '-')}/foto-${j + 1}.jpg`
-            
-            try {
-              const url = await uploadImage(file, fileName)
-              fotosColorData.push({
-                color_id: colorData.id,
-                url
-              })
-            } catch (error) {
-              console.error('Error subiendo foto:', error)
-            }
-          }
-        }
-        
-        // Agregar fotos restantes del producto (después de la primera que ya se usó como principal)
-        const fotosRestantes = formData.fotosProducto.slice(1) // Excluir la primera foto
-        const fotosPorColor = Math.floor(fotosRestantes.length / formData.colores.length)
-        const inicioIndex = i * fotosPorColor
-        const finIndex = i === formData.colores.length - 1 ? fotosRestantes.length : inicioIndex + fotosPorColor
-        
-        for (let j = inicioIndex; j < finIndex; j++) {
-          const file = fotosRestantes[j]
-          const fileName = `${productId}/colores/${color.toLowerCase().replace(/[^a-z0-9]/g, '-')}/producto-${j + 1}.jpg`
-          
-          try {
-            const url = await uploadImage(file, fileName)
-            fotosColorData.push({
-              color_id: colorData.id,
-              url
-            })
-          } catch (error) {
-            console.error('Error subiendo foto:', error)
-          }
-        }
-
-        if (fotosColorData.length > 0) {
-          await adminQuery({
-            op: 'insert',
-            table: 'fotos_color',
-            data: fotosColorData,
-          })
-        }
+      // 4. Actualizar colores (sin borrar los que tienen pedidos)
+      if (!existingData) {
+        throw new Error('No se cargaron los datos del producto')
       }
+
+      const { skippedDeletes } = await syncProductColores({
+        productId,
+        colorNames: formData.colores,
+        existingColores: existingData.colores,
+        coloresConFotos,
+        fotosProducto: formData.fotosProducto,
+        uploadImage,
+      })
 
       // 5. Actualizar foto de medidas si hay una nueva
       if (formData.fotoMedidas) {
@@ -436,7 +375,17 @@ export function ProductEditForm({
         })
       }
 
-      success('¡Producto actualizado exitosamente!', `El producto "${formData.nombre}" ha sido actualizado correctamente.`)
+      if (skippedDeletes.length > 0) {
+        success(
+          'Producto actualizado con aviso',
+          `Guardado. No se quitaron colores con pedidos: ${skippedDeletes.join(', ')}.`,
+        )
+      } else {
+        success(
+          '¡Producto actualizado exitosamente!',
+          `El producto "${formData.nombre}" ha sido actualizado correctamente.`,
+        )
+      }
 
       if (onSuccess) {
         onSuccess()
@@ -446,7 +395,8 @@ export function ProductEditForm({
 
     } catch (err) {
       console.error('Error updating producto:', err)
-      error('Error al actualizar producto', 'No se pudo actualizar el producto. Revisa la consola para más detalles.')
+      const msg = err instanceof Error ? err.message : 'Error desconocido'
+      error('Error al actualizar producto', msg)
     } finally {
       setIsSubmitting(false)
     }

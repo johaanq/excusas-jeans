@@ -75,8 +75,8 @@ function ExitoContent() {
           </p>
           {tipoEnvio === "provincia" && (
             <p className="text-sm text-gray-600 mb-4">
-              Envío por Shalom: el flete lo pagas en la agencia al recoger. Te contactaremos por
-              WhatsApp con los datos de tu boleta y seguimiento.
+              Envío por Shalom: tu pago incluye llevar el pedido hasta la agencia. El flete en
+              destino lo pagas al recoger. Te contactaremos por WhatsApp con el seguimiento.
             </p>
           )}
           {tipoEnvio === "lima" && (

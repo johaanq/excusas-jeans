@@ -162,16 +162,11 @@ export function ProductForm({ embedded = false, onSuccess, onCancel }: ProductFo
         throw new Error('Debe agregar al menos un color')
       }
       
-      if (formData.fotosProducto.length === 0) {
-        throw new Error('Debe subir al menos una foto del producto')
-      }
-      
-      // Verificar que cada color tenga al menos una foto
-      const coloresSinFotos = formData.colores.filter(color => {
-        const colorConFotos = coloresConFotos.find(c => c.nombre === color)
+      const coloresSinFotos = formData.colores.filter((color) => {
+        const colorConFotos = coloresConFotos.find((c) => c.nombre === color)
         return !colorConFotos || colorConFotos.fotos.length === 0
       })
-      
+
       if (coloresSinFotos.length > 0) {
         throw new Error(`Los siguientes colores no tienen fotos: ${coloresSinFotos.join(', ')}`)
       }
@@ -182,12 +177,16 @@ export function ProductForm({ embedded = false, onSuccess, onCancel }: ProductFo
         .replace(/^-+|-+$/g, '')
       
 
-      // 1. Subir imagen principal del producto (primera foto)
-      let fotoPrincipalUrl = null
+      // 1. Imagen principal: foto del producto o la primera foto del primer color
+      let fotoPrincipalUrl: string | null = null
       if (formData.fotosProducto.length > 0) {
-        const primeraFoto = formData.fotosProducto[0]
-        const fileName = `${slug}/principal.jpg`
-        fotoPrincipalUrl = await uploadImage(primeraFoto, fileName)
+        fotoPrincipalUrl = await uploadImage(formData.fotosProducto[0], `${slug}/principal.jpg`)
+      } else {
+        const primerColor = formData.colores[0]
+        const fotosPrimerColor = coloresConFotos.find((c) => c.nombre === primerColor)?.fotos
+        if (fotosPrimerColor?.[0]) {
+          fotoPrincipalUrl = await uploadImage(fotosPrimerColor[0], `${slug}/principal.jpg`)
+        }
       }
 
       // 2. Crear el producto
@@ -514,7 +513,11 @@ export function ProductForm({ embedded = false, onSuccess, onCancel }: ProductFo
 
           {/* Fotos del Producto */}
           <div>
-            <Label htmlFor="fotos-producto">Fotos del Producto</Label>
+            <Label htmlFor="fotos-producto">Fotos del Producto (opcional)</Label>
+            <p className="text-xs text-gray-500 mt-1">
+              Si ya subiste fotos por color, no es obligatorio. La primera foto del primer color se usará
+              como imagen principal del catálogo.
+            </p>
             <div className="mt-2">
               <Input
                 id="fotos-producto"

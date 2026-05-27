@@ -202,8 +202,8 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
           *,
           items:carrito_items (
             *,
-            producto:productos (id, nombre, slug, precio, precio_mayor),
-            color:colores (id, nombre, hex)
+            producto:productos (id, nombre, slug, precio, precio_mayor, foto_principal),
+            color:colores (id, nombre, hex, fotos_color (id, url))
           )
         `)
         .eq('usuario_id', userId)
@@ -218,8 +218,8 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
             *,
             items:carrito_items (
               *,
-              producto:productos (id, nombre, slug, precio, precio_mayor),
-              color:colores (id, nombre, hex)
+              producto:productos (id, nombre, slug, precio, precio_mayor, foto_principal),
+              color:colores (id, nombre, hex, fotos_color (id, url))
             )
           `)
           .single()

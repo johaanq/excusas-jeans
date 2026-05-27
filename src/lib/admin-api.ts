@@ -13,6 +13,8 @@ export type AdminQueryPayload = {
   select?: string
   data?: unknown
   match?: Record<string, string | number | boolean>
+  /** Filtro .in() — p. ej. { color_id: ['uuid1', 'uuid2'] } */
+  matchIn?: Record<string, (string | number)[]>
   rpc?: string
   rpcArgs?: Record<string, unknown>
   order?: { column: string; ascending?: boolean }

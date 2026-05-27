@@ -74,3 +74,25 @@ export function getAdminPathFromHeaders(headers: Headers): (subpath?: string) =>
   const host = headers.get('host')
   return (subpath = '') => getAdminPath(subpath, host)
 }
+
+const ADMIN_PANEL_EXACT = new Set([
+  '/',
+  '/products',
+  '/create',
+  '/pedidos',
+  '/logs',
+  '/administradores',
+])
+
+/** Rutas del panel en el subdominio admin (sin prefijo /admin en la URL). */
+export function isAdminPanelPath(pathname: string): boolean {
+  let p = pathname.split('?')[0] ?? '/'
+  if (p === '/admin') return true
+  if (p.startsWith('/admin/')) {
+    p = p.slice('/admin'.length) || '/'
+  }
+  if (p === '/login') return true
+  if (ADMIN_PANEL_EXACT.has(p)) return true
+  if (p.startsWith('/edit/')) return true
+  return false
+}

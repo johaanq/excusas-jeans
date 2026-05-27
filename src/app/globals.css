@@ -127,8 +127,12 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    overflow-x: clip;
+  }
   body {
     @apply bg-background text-foreground;
+    overflow-x: clip;
   }
 }
 
@@ -351,6 +355,34 @@
     color: rgb(74, 222, 128) !important;
   }
 
+  .header-nav-link--hero {
+    color: rgba(255, 255, 255, 0.92);
+  }
+
+  .header-nav-link--hero:hover {
+    color: #fff;
+    background-color: rgba(255, 255, 255, 0.12);
+  }
+
+  .header-nav-link--solid {
+    color: rgb(68, 64, 60);
+  }
+
+  .header-nav-link--solid:hover {
+    color: rgb(28, 25, 23);
+    background-color: rgb(245, 245, 244);
+  }
+
+  .header-nav-link--active.header-nav-link--hero {
+    color: #fff;
+    background-color: rgba(255, 255, 255, 0.18);
+  }
+
+  .header-nav-link--active.header-nav-link--solid {
+    color: var(--store-denim-dark);
+    background-color: oklch(0.55 0.1 250 / 0.08);
+  }
+
   /* Búsqueda, carrito y cuenta: hover suave (sin fondo verde de ghost/accent) */
   #main-header button.h-10.w-10:hover {
     background-color: rgba(255, 255, 255, 0.14) !important;
@@ -360,6 +392,15 @@
   #main-header.header-scrolled button.h-10.w-10:hover {
     background-color: rgba(17, 24, 39, 0.07) !important;
     color: inherit !important;
+  }
+
+  /* Popup “agregado al carrito”: no heredar .header-scrolled .text-white del navbar */
+  #main-header .cart-peek-panel {
+    color: rgb(28, 25, 23);
+  }
+
+  #main-header.header-scrolled .cart-peek-panel .cart-peek-btn {
+    color: #ffffff !important;
   }
 
   /* ——— Sistema visual tienda Excusas ——— */

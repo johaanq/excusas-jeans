@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { getAdminOrigin, isAdminHost, toInternalAdminPath } from '@/lib/admin-host'
+import {
+  getAdminOrigin,
+  isAdminHost,
+  isAdminPanelPath,
+  toInternalAdminPath,
+} from '@/lib/admin-host'
 
 const PUBLIC_FILE = /\.(.*)$/
 
@@ -22,6 +27,16 @@ export function middleware(request: NextRequest) {
   if (onAdmin) {
     if (pathname === '/login' || pathname.startsWith('/api/')) {
       return NextResponse.next()
+    }
+
+    // Tienda (/catalogo, /producto, etc.) solo en el dominio principal
+    if (!isAdminPanelPath(pathname)) {
+      const storeBase =
+        process.env.NEXT_PUBLIC_APP_URL?.trim()?.replace(/\/$/, '') ||
+        'https://excusasjeans.com'
+      const dest = new URL(pathname, storeBase)
+      dest.search = request.nextUrl.search
+      return NextResponse.redirect(dest)
     }
 
     // Quitar /admin de la barra de direcciones si alguien lo escribe

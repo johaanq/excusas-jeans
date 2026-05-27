@@ -38,11 +38,13 @@ export interface CarritoItem {
     slug: string
     precio?: number
     precio_mayor?: number
+    foto_principal?: string
   }
   color?: {
     id: string
     nombre: string
     hex: string
+    fotos_color?: { id: string; url: string }[]
   }
 }
 

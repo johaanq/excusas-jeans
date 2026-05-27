@@ -29,7 +29,7 @@ export default function PreguntasFrecuentesPage() {
     {
       question: "¿Hacen envíos a todo el Perú?",
       answer:
-        "Sí, enviamos a todo el Perú. En Lima el costo de delivery se calcula al pagar, según tu distrito. A provincia pagas los productos en la web y el flete de la agencia al recoger. Si en tu zona no hay cobertura habitual, escríbenos y lo coordinamos.",
+        "Sí, enviamos a todo el Perú. En Lima: S/ 15 (metropolitana) o S/ 20 (departamento) según tu distrito. En provincia: S/ 10 hasta agencia Shalom en el checkout; el flete al recoger lo pagas en la agencia. Si en tu zona no hay cobertura, escríbenos.",
     },
     {
       question: "¿Cómo puedo hacer seguimiento a mi pedido?",
