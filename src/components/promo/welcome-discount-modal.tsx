@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -15,18 +15,17 @@ export function WelcomeDiscountModal() {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
   const { isAuthenticated, isLoading } = useUserAuth()
+  const triedInitialOpenRef = useRef(false)
 
   useEffect(() => {
     try {
+      if (triedInitialOpenRef.current) return
       if (isLoading) return
+      triedInitialOpenRef.current = true
 
-      if (pathname?.startsWith("/admin")) return
-      if (pathname?.startsWith("/checkout")) return
-
-      if (isAuthenticated) {
-        setOpen(false)
-        return
-      }
+      // Solo mostrar en recarga/carga inicial de la home.
+      if (pathname !== "/") return
+      if (isAuthenticated) return
 
       const t = window.setTimeout(() => setOpen(true), 900)
       return () => window.clearTimeout(t)
@@ -34,6 +33,10 @@ export function WelcomeDiscountModal() {
       /* ignore */
     }
   }, [pathname, isAuthenticated, isLoading])
+
+  useEffect(() => {
+    if (isAuthenticated) setOpen(false)
+  }, [isAuthenticated])
 
   const dismiss = () => {
     setOpen(false)
