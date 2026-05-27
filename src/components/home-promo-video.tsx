@@ -11,6 +11,7 @@ export function HomePromoVideo() {
   const [inView, setInView] = useState(false)
   const [playing, setPlaying] = useState(false)
   const [failed, setFailed] = useState(false)
+  const [aspectRatio, setAspectRatio] = useState<string | null>(null)
 
   useEffect(() => {
     const el = containerRef.current
@@ -38,9 +39,10 @@ export function HomePromoVideo() {
       <div
         ref={containerRef}
         className={cn(
-          "relative w-full max-w-full overflow-hidden rounded-lg bg-stone-100 shadow-lg",
-          playing ? "aspect-[4/5] sm:aspect-[4/3]" : "h-0 overflow-hidden"
+          "relative w-full max-w-full overflow-hidden rounded-lg shadow-lg bg-transparent",
+          playing ? (aspectRatio ? "" : "aspect-[4/5] sm:aspect-[4/3]") : "h-0 overflow-hidden"
         )}
+        style={aspectRatio ? { aspectRatio } : undefined}
       >
         {inView ? (
           <video
@@ -64,6 +66,14 @@ export function HomePromoVideo() {
             }}
             aria-label="Video promocional Excusas Jeans"
             onPlaying={() => setPlaying(true)}
+            onLoadedMetadata={() => {
+              const video = videoRef.current
+              if (!video) return
+              if (video.videoWidth > 0 && video.videoHeight > 0) {
+                // CSS aspect-ratio expects: "width/height"
+                setAspectRatio(`${video.videoWidth}/${video.videoHeight}`)
+              }
+            }}
             onError={() => setFailed(true)}
           />
         ) : null}
