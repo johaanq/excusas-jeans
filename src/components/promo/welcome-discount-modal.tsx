@@ -7,32 +7,35 @@ import { usePathname } from "next/navigation"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { WELCOME_DISCOUNT_PERCENT } from "@/lib/welcome-discount"
 import { cn } from "@/lib/utils"
+import { useUserAuth } from "@/contexts/user-auth-context"
 
-const STORAGE_KEY = "excusas_welcome_modal_v2"
 const PROMO_IMAGE = "/promo-registro-5.png"
 
 export function WelcomeDiscountModal() {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
+  const { isAuthenticated, isLoading } = useUserAuth()
 
   useEffect(() => {
     try {
+      if (isLoading) return
+
       if (pathname?.startsWith("/admin")) return
       if (pathname?.startsWith("/checkout")) return
-      if (sessionStorage.getItem(STORAGE_KEY)) return
+
+      if (isAuthenticated) {
+        setOpen(false)
+        return
+      }
+
       const t = window.setTimeout(() => setOpen(true), 900)
       return () => window.clearTimeout(t)
     } catch {
       /* ignore */
     }
-  }, [pathname])
+  }, [pathname, isAuthenticated, isLoading])
 
   const dismiss = () => {
-    try {
-      sessionStorage.setItem(STORAGE_KEY, "1")
-    } catch {
-      /* ignore */
-    }
     setOpen(false)
   }
 
@@ -42,7 +45,7 @@ export function WelcomeDiscountModal() {
     <Dialog open={open} onOpenChange={(v) => !v && dismiss()}>
       <DialogContent
         className={cn(
-          "max-h-[min(92vh,40rem)] w-[min(100vw-1.25rem,20rem)] max-w-none gap-0 overflow-hidden rounded-2xl border-0 p-0 shadow-2xl",
+          "max-h-[min(86vh,34rem)] w-[min(100vw-1.25rem,20rem)] max-w-none gap-0 overflow-y-auto overflow-x-hidden rounded-2xl border-0 p-0 shadow-2xl",
           "sm:w-[22rem]",
           "[&>button]:right-3 [&>button]:top-3 [&>button]:rounded-full [&>button]:bg-white/95 [&>button]:p-2 [&>button]:text-stone-800 [&>button]:opacity-100 [&>button]:shadow-md",
           "[&>button]:hover:bg-white"
@@ -52,7 +55,7 @@ export function WelcomeDiscountModal() {
           {WELCOME_DISCOUNT_PERCENT}% de descuento en tu primera compra
         </DialogTitle>
 
-        <div className="relative aspect-[4/5] w-full shrink-0 bg-stone-200">
+        <div className="relative aspect-[16/9] sm:aspect-[4/5] w-full shrink-0 bg-stone-200">
           <Image
             src={PROMO_IMAGE}
             alt="Excusas Jeans — moda denim"
@@ -65,7 +68,7 @@ export function WelcomeDiscountModal() {
             className="pointer-events-none absolute inset-0 bg-gradient-to-t from-stone-950/80 via-stone-900/15 to-stone-900/5"
             aria-hidden
           />
-          <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between gap-3">
+          <div className="absolute bottom-3 left-4 right-4 flex items-end justify-between gap-3">
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/80">
                 Bienvenida
@@ -81,7 +84,7 @@ export function WelcomeDiscountModal() {
           </div>
         </div>
 
-        <div className="bg-white px-5 pb-5 pt-4 sm:px-6 sm:pb-6">
+        <div className="bg-white px-4 pb-4 pt-3 sm:px-6 sm:pb-6">
           <h2 className="text-lg font-bold tracking-tight text-stone-900">
             Tu primera compra con descuento
           </h2>
