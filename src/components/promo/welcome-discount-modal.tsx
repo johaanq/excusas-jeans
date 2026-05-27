@@ -15,24 +15,24 @@ export function WelcomeDiscountModal() {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
   const { isAuthenticated, isLoading } = useUserAuth()
-  const triedInitialOpenRef = useRef(false)
+  /** Una sola evaluación por carga completa de la app (no por cada cambio de ruta). */
+  const evaluatedRef = useRef(false)
+  /** Ruta real al momento de la primera evaluación (tras auth). */
+  const landingPathRef = useRef<string | null>(null)
 
   useEffect(() => {
-    try {
-      if (triedInitialOpenRef.current) return
-      if (isLoading) return
-      triedInitialOpenRef.current = true
+    if (evaluatedRef.current) return
+    if (isLoading) return
 
-      // Solo mostrar en recarga/carga inicial de la home.
-      if (pathname !== "/") return
-      if (isAuthenticated) return
+    evaluatedRef.current = true
+    landingPathRef.current = window.location.pathname
 
-      const t = window.setTimeout(() => setOpen(true), 900)
-      return () => window.clearTimeout(t)
-    } catch {
-      /* ignore */
-    }
-  }, [pathname, isAuthenticated, isLoading])
+    if (landingPathRef.current !== "/") return
+    if (isAuthenticated) return
+
+    const t = window.setTimeout(() => setOpen(true), 900)
+    return () => window.clearTimeout(t)
+  }, [isLoading, isAuthenticated])
 
   useEffect(() => {
     if (isAuthenticated) setOpen(false)
