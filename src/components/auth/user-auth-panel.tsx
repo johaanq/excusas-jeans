@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Alert } from "@/components/ui/alert"
 import { cn } from "@/lib/utils"
 import {
-  buildHomeVerifyUrl,
+  buildProfileVerifyUrl,
   setPendingVerifyEmail,
 } from "@/components/auth/auth-verification-gate"
 
@@ -30,9 +30,9 @@ export function UserAuthPanel() {
 
   const [loginData, setLoginData] = useState({ email: "", password: "" })
   const [registerData, setRegisterData] = useState({
-    nombre: "",
+    nombres: "",
+    apellidos: "",
     email: "",
-    telefono: "",
     password: "",
     confirmPassword: "",
   })
@@ -54,8 +54,8 @@ export function UserAuthPanel() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      const redirect = searchParams.get("redirect") || "/"
-      router.replace(redirect)
+      const redirect = searchParams.get("redirect")
+      if (redirect) router.replace(redirect)
     }
   }, [isAuthenticated, router, searchParams])
 
@@ -67,10 +67,15 @@ export function UserAuthPanel() {
 
     const result = await login(loginData)
     if (result.success) {
-      router.replace(searchParams.get("redirect") || "/")
+      if (result.needsVerification && result.email) {
+        setPendingVerifyEmail(result.email)
+        router.replace(buildProfileVerifyUrl(result.email))
+      } else {
+        router.replace(searchParams.get("redirect") || "/")
+      }
     } else if (result.needsVerification && result.email) {
       setPendingVerifyEmail(result.email)
-      router.replace(buildHomeVerifyUrl(result.email))
+      router.replace(buildProfileVerifyUrl(result.email))
     } else {
       setError(result.error || "Error al iniciar sesión")
     }
@@ -94,22 +99,36 @@ export function UserAuthPanel() {
       return
     }
 
+    const nombre = [registerData.nombres, registerData.apellidos]
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .join(" ")
+
+    if (!nombre) {
+      setError("Ingresa tu nombre y apellidos")
+      setIsLoading(false)
+      return
+    }
+
     const result = await register({
-      nombre: registerData.nombre,
+      nombre,
       email: registerData.email,
-      telefono: registerData.telefono,
       password: registerData.password,
     })
 
     if (result.success) {
-      if (result.needsVerification && result.email) {
-        setPendingVerifyEmail(registerData.email)
-        router.replace(buildHomeVerifyUrl(registerData.email))
-      } else {
-        router.replace(searchParams.get("redirect") || "/")
-      }
+      setPendingVerifyEmail(registerData.email)
+      router.replace(
+        result.needsVerification
+          ? buildProfileVerifyUrl(registerData.email)
+          : "/perfil"
+      )
     } else {
       setError(result.error || "Error al crear la cuenta")
+      if (result.emailConflict) {
+        setTab("login")
+        setLoginData((p) => ({ ...p, email: registerData.email }))
+      }
     }
     setIsLoading(false)
   }
@@ -216,15 +235,29 @@ export function UserAuthPanel() {
           </form>
         ) : (
           <form onSubmit={handleRegister} className="space-y-4">
-            <div>
-              <Label htmlFor="reg-nombre">Nombre completo</Label>
-              <Input
-                id="reg-nombre"
-                value={registerData.nombre}
-                onChange={(e) => setRegisterData((p) => ({ ...p, nombre: e.target.value }))}
-                className="mt-1.5 h-11"
-                required
-              />
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="reg-nombres">Nombres</Label>
+                <Input
+                  id="reg-nombres"
+                  autoComplete="given-name"
+                  value={registerData.nombres}
+                  onChange={(e) => setRegisterData((p) => ({ ...p, nombres: e.target.value }))}
+                  className="mt-1.5 h-11"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="reg-apellidos">Apellidos</Label>
+                <Input
+                  id="reg-apellidos"
+                  autoComplete="family-name"
+                  value={registerData.apellidos}
+                  onChange={(e) => setRegisterData((p) => ({ ...p, apellidos: e.target.value }))}
+                  className="mt-1.5 h-11"
+                  required
+                />
+              </div>
             </div>
             <div>
               <Label htmlFor="reg-email">Correo</Label>
@@ -235,16 +268,6 @@ export function UserAuthPanel() {
                 onChange={(e) => setRegisterData((p) => ({ ...p, email: e.target.value }))}
                 className="mt-1.5 h-11"
                 required
-              />
-            </div>
-            <div>
-              <Label htmlFor="reg-telefono">Teléfono (opcional)</Label>
-              <Input
-                id="reg-telefono"
-                type="tel"
-                value={registerData.telefono}
-                onChange={(e) => setRegisterData((p) => ({ ...p, telefono: e.target.value }))}
-                className="mt-1.5 h-11"
               />
             </div>
             <div>

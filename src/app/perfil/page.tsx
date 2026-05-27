@@ -1,15 +1,20 @@
 "use client"
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, useMemo } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useUserAuth } from '@/contexts/user-auth-context'
+import { ProfileEmailVerificationBanner } from '@/components/auth/profile-email-verification-banner'
+import {
+  clearPendingVerifyEmail,
+  getPendingVerifyEmail,
+} from '@/components/auth/auth-verification-gate'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert } from '@/components/ui/alert'
 import { Textarea } from '@/components/ui/textarea'
-import { Save, User, MapPin } from 'lucide-react'
+import { Save, User, MapPin, LogOut } from 'lucide-react'
 import { insforgeClient } from '@/lib/insforge-client'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
@@ -107,11 +112,41 @@ const EMPRESAS_ENVIO = [
 ]
 
 export default function PerfilPage() {
-  const { user, isAuthenticated, isLoading, refreshUser } = useUserAuth()
+  const { user, isAuthenticated, isLoading, emailVerified, refreshUser, logout } = useUserAuth()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+
+  const emailLinkStatus = useMemo(() => {
+    const type = searchParams.get('insforge_type')
+    const status = searchParams.get('insforge_status')
+    if (type !== 'verify_email') return null
+    if (status === 'success') return 'success' as const
+    if (status === 'error') return 'error' as const
+    return null
+  }, [searchParams])
+
+  const emailLinkError = searchParams.get('insforge_error')
+    ? decodeURIComponent(searchParams.get('insforge_error')!)
+    : ''
+
+  useEffect(() => {
+    if (emailLinkStatus === 'success') {
+      void refreshUser()
+      setSuccess('¡Correo verificado correctamente!')
+      clearPendingVerifyEmail()
+      router.replace('/perfil', { scroll: false })
+    } else if (emailLinkStatus === 'error') {
+      router.replace('/perfil', { scroll: false })
+    }
+  }, [emailLinkStatus, refreshUser, router])
+
+  const bannerEmail = user?.email || getPendingVerifyEmail(searchParams)
+
+  const showVerificationBanner =
+    isAuthenticated && !emailVerified && emailLinkStatus !== 'success' && Boolean(bannerEmail)
 
   const [formData, setFormData] = useState<ProfileFormData>({
     nombre: '',
@@ -166,6 +201,11 @@ export default function PerfilPage() {
         sede_envio: ''
       }))
     }
+  }
+
+  const handleLogout = async () => {
+    await logout()
+    router.replace('/')
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -230,15 +270,46 @@ export default function PerfilPage() {
     <div className="min-h-screen bg-gray-50">
       <Header />
       <main className="container mx-auto max-w-4xl px-4 pb-12 pt-28 sm:pt-32">
-        <div className="mb-6 sm:mb-8">
+        <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-center gap-2 sm:gap-3">
-            <User className="w-6 h-6 sm:w-8 sm:h-8 text-gray-600" />
+            <User className="h-6 w-6 text-gray-600 sm:h-8 sm:w-8" />
             <div>
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">Mi Perfil</h1>
-              <p className="text-sm sm:text-base text-gray-600">Actualiza tu información personal y dirección de envío</p>
+              <h1 className="text-xl font-bold text-gray-900 sm:text-2xl md:text-3xl">Mi Perfil</h1>
+              <p className="text-sm text-gray-600 sm:text-base">
+                Actualiza tu información personal y dirección de envío
+              </p>
             </div>
           </div>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleLogout}
+            className="flex shrink-0 items-center gap-2 self-start"
+          >
+            <LogOut className="h-4 w-4" />
+            Cerrar sesión
+          </Button>
         </div>
+
+        {emailLinkStatus === 'success' && bannerEmail && (
+          <ProfileEmailVerificationBanner email={bannerEmail} variant="success" />
+        )}
+
+        {emailLinkStatus === 'error' && bannerEmail && (
+          <ProfileEmailVerificationBanner
+            email={bannerEmail}
+            variant="error"
+            errorMessage={emailLinkError}
+          />
+        )}
+
+        {showVerificationBanner && emailLinkStatus !== 'error' && bannerEmail && (
+          <ProfileEmailVerificationBanner
+            email={bannerEmail}
+            variant="pending"
+            onDismissQuery={() => router.replace('/perfil', { scroll: false })}
+          />
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Información Personal */}

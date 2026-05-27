@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getInsforgeAdmin } from '@/lib/insforge-admin'
+import { fetchUsuarioWithAccessToken } from '@/lib/user-profile-server'
 
 const baseUrl = process.env.NEXT_PUBLIC_INSFORGE_URL
 
@@ -36,22 +36,13 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Sesión inválida' }, { status: 401 })
     }
 
-    const admin = getInsforgeAdmin()
-    const { data, error } = await admin.database
-      .from('usuarios')
-      .select('*')
-      .eq('id', authUser.id)
-      .maybeSingle()
+    const user = await fetchUsuarioWithAccessToken(authUser.id, accessToken)
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 })
-    }
-
-    if (!data) {
+    if (!user) {
       return NextResponse.json({ error: 'Perfil no encontrado' }, { status: 404 })
     }
 
-    return NextResponse.json({ user: data })
+    return NextResponse.json({ user })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Error interno'
     return NextResponse.json({ error: message }, { status: 500 })

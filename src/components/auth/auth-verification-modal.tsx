@@ -51,7 +51,7 @@ export function AuthVerificationModal({
       iconClass: "text-emerald-700",
       title: "Revisa tu correo",
       description:
-        "Revisa tu correo y abre el enlace de verificación. Luego inicia sesión aquí.",
+        "Revisa tu correo y abre el enlace de verificación. Puedes seguir en tu perfil mientras tanto.",
       primaryLabel: "Entendido",
       primaryAction: onClose,
     },
@@ -59,8 +59,8 @@ export function AuthVerificationModal({
       icon: CheckCircle2,
       iconClass: "text-emerald-600",
       title: "¡Cuenta verificada!",
-      description: "Tu correo ya está confirmado. Te llevamos a la tienda…",
-      primaryLabel: "Ir a la tienda",
+      description: "Tu correo ya está confirmado.",
+      primaryLabel: "Continuar",
       primaryAction: onSuccessContinue ?? onClose,
     },
     error: {

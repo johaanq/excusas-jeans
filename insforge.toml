@@ -1,0 +1,24 @@
+[auth]
+allowed_redirect_urls = ["https://excusasjeans.com", "https://excusasjeans.com/cuenta", "http://localhost:3000/cuenta", "http://localhost:3000/perfil", "https://excusasjeans.com/perfil"]
+# false = puede iniciar sesión sin verificar; la app envía el correo y muestra aviso en /perfil
+require_email_verification = false
+verify_email_method = "link"
+reset_password_method = "code"
+
+[auth.password]
+min_length = 6
+require_number = false
+require_lowercase = false
+require_uppercase = false
+require_special_char = false
+
+[auth.smtp]
+enabled = true
+host = "smtp.resend.com"
+port = 465
+username = "resend"
+# password is managed via secrets — run `insforge secrets add SMTP_PASSWORD "<value>"`
+password = "env(SMTP_PASSWORD)"
+sender_email = "noreply@excusasjeans.com"
+sender_name = "Excusas Jeans"
+min_interval_seconds = 60

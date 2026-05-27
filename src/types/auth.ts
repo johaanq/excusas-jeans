@@ -3,6 +3,8 @@ export interface AuthActionResult {
   error?: string
   needsVerification?: boolean
   email?: string
+  /** Registro: el correo ya tiene perfil en la tienda (usar inicio de sesión). */
+  emailConflict?: boolean
 }
 
 export function isEmailVerificationError(message: string): boolean {

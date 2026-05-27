@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getInsforgeAdmin } from '@/lib/insforge-admin'
+import { ensureCartForUser } from '@/lib/user-profile-server'
 
 const baseUrl = process.env.NEXT_PUBLIC_INSFORGE_URL
 
@@ -60,6 +61,8 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: error.message }, { status: 400 })
       }
     }
+
+    await ensureCartForUser(authUser.id)
 
     return NextResponse.json({
       userId: authUser.id,

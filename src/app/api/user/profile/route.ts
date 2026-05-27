@@ -1,5 +1,10 @@
 import { NextResponse } from 'next/server'
 import { getInsforgeAdmin } from '@/lib/insforge-admin'
+import {
+  fetchUsuarioByEmail,
+  removeOrphanUsuarioProfile,
+  resolveUsuarioAfterProfileRpc,
+} from '@/lib/user-profile-server'
 
 const baseUrl = process.env.NEXT_PUBLIC_INSFORGE_URL
 
@@ -65,36 +70,52 @@ export async function POST(request: Request) {
     }
 
     const admin = getInsforgeAdmin()
-    const { error } = await admin.database.rpc('crear_perfil_usuario', {
-      p_id: userId,
-      p_nombre: nombre,
-      p_email: email,
-      p_telefono: telefono ?? null,
+
+    const runProfileRpc = () =>
+      admin.database.rpc('crear_perfil_usuario', {
+        p_id: userId,
+        p_nombre: nombre,
+        p_email: email,
+        p_telefono: telefono ?? null,
+      })
+
+    let { error } = await runProfileRpc()
+
+    let resolved = await resolveUsuarioAfterProfileRpc({
+      authUserId: userId,
+      nombre,
+      email,
+      telefono: telefono ?? null,
+      accessToken: accessToken ?? null,
+      rpcError: error ? { message: error.message } : null,
     })
 
-    if (error) {
-      const msg = error.message.toLowerCase()
-      const alreadyExists =
-        msg.includes('duplicate') || msg.includes('unique') || msg.includes('ya existe')
-      if (!alreadyExists) {
-        return NextResponse.json({ error: error.message }, { status: 400 })
+    if (!resolved.ok && resolved.error === '__ORPHAN_PROFILE__') {
+      const orphan = await fetchUsuarioByEmail(email)
+      if (orphan && orphan.id !== userId) {
+        await removeOrphanUsuarioProfile(orphan.id)
+        const retry = await runProfileRpc()
+        error = retry.error
+        resolved = await resolveUsuarioAfterProfileRpc({
+          authUserId: userId,
+          nombre,
+          email,
+          telefono: telefono ?? null,
+          accessToken: accessToken ?? null,
+          rpcError: error ? { message: error.message } : null,
+        })
       }
     }
 
-    const { data: user, error: fetchError } = await admin.database
-      .from('usuarios')
-      .select('*')
-      .eq('id', userId)
-      .maybeSingle()
-
-    if (fetchError || !user) {
-      return NextResponse.json(
-        { error: fetchError?.message || 'Perfil creado pero no se pudo leer' },
-        { status: 500 }
-      )
+    if (!resolved.ok) {
+      const message =
+        resolved.error === '__ORPHAN_PROFILE__'
+          ? 'Ya existe una cuenta con este correo. Inicia sesión con tu contraseña o usa «¿Olvidaste tu contraseña?».'
+          : resolved.error
+      return NextResponse.json({ error: message }, { status: resolved.status })
     }
 
-    return NextResponse.json({ data, user })
+    return NextResponse.json({ user: resolved.user })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Error interno'
     if (message.includes('INSFORGE_ADMIN_API_KEY')) {

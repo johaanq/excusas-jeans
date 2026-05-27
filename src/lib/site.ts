@@ -85,13 +85,11 @@ export function getSiteUrl(): string {
   return url.replace(/\/$/, '')
 }
 
-/** Redirects en correos de auth: siempre producción (el enlace se abre fuera de localhost). */
+/** Base para redirects de auth (signUp, verificación, reset). Usa NEXT_PUBLIC_APP_URL o producción. */
 export function getAuthEmailRedirectBaseUrl(): string {
   const url = process.env.NEXT_PUBLIC_APP_URL?.trim()
-  if (!url || url.includes('localhost') || url.includes('127.0.0.1')) {
-    return DEFAULT_SITE_URL
-  }
-  return url.replace(/\/$/, '')
+  if (url) return url.replace(/\/$/, '')
+  return DEFAULT_SITE_URL
 }
 
 /** Variantes de marca que queremos asociar en buscadores. */

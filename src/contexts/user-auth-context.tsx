@@ -1,7 +1,8 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react'
 import { insforgeClient } from '@/lib/insforge-client'
+import { fetchOrCreateUserCart } from '@/lib/cart-client'
 import {
   clearStoredUserSession,
   fetchCurrentAuthUser,
@@ -62,7 +63,7 @@ async function createUserProfile(
   userId: string,
   data: Pick<RegisterData, 'nombre' | 'email' | 'telefono'>,
   accessToken: string | null
-): Promise<{ ok: boolean; user?: Usuario; error?: string }> {
+): Promise<{ ok: boolean; user?: Usuario; error?: string; status?: number }> {
   const profileRes = await fetch('/api/user/profile', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -76,20 +77,20 @@ async function createUserProfile(
   })
   const profileJson = await profileRes.json()
   if (profileRes.ok) {
-    return { ok: true, user: profileJson.user as Usuario | undefined }
+    const user = profileJson.user as Usuario | undefined
+    if (!user?.id) {
+      return {
+        ok: false,
+        error:
+          (profileJson.error as string) ||
+          'No se pudo confirmar el perfil. Intenta iniciar sesión en unos segundos.',
+      }
+    }
+    return { ok: true, user }
   }
 
-  const msg = (profileJson.error as string) || ''
-  const alreadyInDb =
-    msg.toLowerCase().includes('duplicate') ||
-    msg.toLowerCase().includes('unique') ||
-    msg.toLowerCase().includes('ya existe')
-  if (alreadyInDb) {
-    const user = accessToken ? await fetchUsuarioRow(userId, accessToken) : null
-    return { ok: true, user: user ?? undefined }
-  }
-
-  return { ok: false, error: msg || 'Error al crear perfil de usuario' }
+  const msg = (profileJson.error as string) || 'Error al crear perfil de usuario'
+  return { ok: false, error: msg, status: profileRes.status }
 }
 
 async function repairMissingUsuarioProfile(
@@ -125,6 +126,7 @@ interface UserAuthContextType {
   user: Usuario | null
   carrito: Carrito | null
   isAuthenticated: boolean
+  emailVerified: boolean
   isLoading: boolean
   login: (data: LoginData) => Promise<AuthActionResult>
   register: (data: RegisterData) => Promise<AuthActionResult>
@@ -143,13 +145,16 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<Usuario | null>(null)
   const [carrito, setCarrito] = useState<Carrito | null>(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [emailVerified, setEmailVerified] = useState(true)
   const [isLoading, setIsLoading] = useState(true)
+  const cartLoadRef = useRef<Promise<void> | null>(null)
 
   const checkAuth = useCallback(async () => {
     try {
       if (!getStoredUserToken()) {
         setUser(null)
         setIsAuthenticated(false)
+        setEmailVerified(true)
         return
       }
 
@@ -171,6 +176,7 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
         if (userData) {
           setUser(userData)
           setIsAuthenticated(true)
+          setEmailVerified(authUser.emailVerified ?? false)
           await loadCart(userData.id)
           return
         }
@@ -186,6 +192,7 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
       }
       setUser(null)
       setIsAuthenticated(false)
+      setEmailVerified(true)
     } catch (error) {
       console.error('Error checking auth:', error)
       clearStoredUserSession()
@@ -196,6 +203,7 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
       }
       setUser(null)
       setIsAuthenticated(false)
+      setEmailVerified(true)
     } finally {
       setIsLoading(false)
     }
@@ -208,37 +216,48 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
   const finalizeRegistration = async (
     authUser: AuthUserPayload,
     data: RegisterData,
-    accessToken: string | null
+    accessToken: string | null,
+    options?: { sendVerificationEmail?: boolean }
   ): Promise<AuthActionResult> => {
     const profile = await createUserProfile(authUser.id, data, accessToken)
     if (!profile.ok) {
-      return { success: false, error: profile.error }
-    }
-
-    if (!authUser.emailVerified) {
-      // signUp ya envió el correo con enlace; un resend aquí invalida el token anterior.
-      return {
-        success: true,
-        needsVerification: true,
-        email: data.email,
+      try {
+        await insforgeClient.auth.signOut()
+      } catch {
+        // sin sesión activa
       }
+      clearStoredUserSession()
+      return { success: false, error: profile.error, emailConflict: profile.status === 409 }
     }
 
     if (accessToken) {
       saveStoredUserToken(accessToken)
       const userRow =
-        profile.user ??
-        (await fetchUsuarioRow(authUser.id, accessToken)) ?? {
-          id: authUser.id,
-          nombre: data.nombre,
-          email: data.email,
-          telefono: data.telefono,
-          created_at: authUser.createdAt,
-          updated_at: authUser.updatedAt,
+        profile.user ?? (await fetchUsuarioRow(authUser.id, accessToken))
+
+      if (!userRow) {
+        return {
+          success: false,
+          error:
+            'No pudimos completar tu perfil. Intenta iniciar sesión en unos segundos o contacta por WhatsApp.',
         }
+      }
+
       setUser(userRow)
       setIsAuthenticated(true)
+      setEmailVerified(authUser.emailVerified ?? false)
       await loadCart(authUser.id)
+    }
+
+    if (!authUser.emailVerified) {
+      if (options?.sendVerificationEmail) {
+        await insforgeClient.auth.resendVerificationEmail(data.email)
+      }
+      return {
+        success: true,
+        needsVerification: true,
+        email: data.email,
+      }
     }
 
     return { success: true }
@@ -266,6 +285,21 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
       await insforgeClient.auth.resendVerificationEmail(data.email)
     }
 
+    if (data.password) {
+      const { data: loginData } = await insforgeClient.auth.signInWithPassword({
+        email: data.email,
+        password: data.password,
+      })
+      if (loginData?.user) {
+        return finalizeRegistration(
+          loginData.user,
+          data,
+          loginData.session?.access_token ?? null,
+          { sendVerificationEmail: false }
+        )
+      }
+    }
+
     return {
       success: true,
       needsVerification: true,
@@ -273,53 +307,28 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const loadCart = async (userId: string) => {
-    try {
-      // Obtener o crear carrito
-      let carritoData = null
-      
-      const { data: existingCarrito, error: carritoError } = await insforgeClient
-        .from('carritos')
-        .select(`
-          *,
-          items:carrito_items (
-            *,
-            producto:productos (id, nombre, slug, precio, precio_mayor, foto_principal),
-            color:colores (id, nombre, hex, fotos_color (id, url))
-          )
-        `)
-        .eq('usuario_id', userId)
-        .single()
-
-      if (carritoError && carritoError.code === 'PGRST116') {
-        // No existe carrito, crear uno nuevo
-        const { data: newCarrito, error: newCarritoError } = await insforgeClient
-          .from('carritos')
-          .insert({ usuario_id: userId })
-          .select(`
-            *,
-            items:carrito_items (
-              *,
-              producto:productos (id, nombre, slug, precio, precio_mayor, foto_principal),
-              color:colores (id, nombre, hex, fotos_color (id, url))
-            )
-          `)
-          .single()
-
-        if (newCarrito && !newCarritoError) {
-          carritoData = newCarrito
-        }
-      } else if (existingCarrito) {
-        carritoData = existingCarrito
-      }
-
-      if (carritoData) {
-        setCarrito(carritoData)
-      }
-    } catch (error) {
-      console.error('Error loading cart:', error)
+  const loadCart = useCallback(async (userId: string) => {
+    if (cartLoadRef.current) {
+      await cartLoadRef.current
+      return
     }
-  }
+
+    const task = (async () => {
+      try {
+        const carritoData = await fetchOrCreateUserCart(userId)
+        if (carritoData) setCarrito(carritoData)
+      } catch (error) {
+        console.error('Error loading cart:', error)
+      }
+    })()
+
+    cartLoadRef.current = task
+    try {
+      await task
+    } finally {
+      cartLoadRef.current = null
+    }
+  }, [])
 
   const requestEmailVerification = async (email: string): Promise<AuthActionResult> => {
     const { error } = await insforgeClient.auth.resendVerificationEmail(email)
@@ -346,16 +355,11 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
 
       if (authError) {
         console.error('Auth error:', authError)
-        if (isEmailVerificationError(authError.message)) {
+        const authErr = authError as { message?: string; statusCode?: number }
+        if (isEmailVerificationError(authErr.message ?? '')) {
           return requestEmailVerification(data.email)
         }
-        return { success: false, error: authError.message }
-      }
-
-      if (authData?.user && !authData.user.emailVerified) {
-        await insforgeClient.auth.signOut()
-        clearStoredUserSession()
-        return requestEmailVerification(data.email)
+        return { success: false, error: authErr.message || 'Error al iniciar sesión' }
       }
 
       if (authData?.user && authData?.session) {
@@ -376,7 +380,17 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
         if (userData) {
           setUser(userData)
           setIsAuthenticated(true)
+          setEmailVerified(authData.user.emailVerified ?? false)
           await loadCart(userData.id)
+
+          if (!authData.user.emailVerified) {
+            return {
+              success: true,
+              needsVerification: true,
+              email: data.email,
+            }
+          }
+
           return { success: true }
         }
 
@@ -427,7 +441,8 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
             return finalizeRegistration(
               loginData.user,
               data,
-              loginData.session?.access_token ?? null
+              loginData.session?.access_token ?? null,
+              { sendVerificationEmail: false }
             )
           }
 
@@ -437,16 +452,17 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
         return { success: false, error: authErr.message || 'Error al crear cuenta' }
       }
 
-      if (authData?.requireEmailVerification && !authData.user) {
-        return ensureProfileAfterAuthSignup(data)
-      }
-
       if (authData?.user) {
         return finalizeRegistration(
           authData.user,
           data,
-          authData.accessToken ?? null
+          authData.accessToken ?? null,
+          { sendVerificationEmail: !(authData.user.emailVerified ?? false) }
         )
+      }
+
+      if (authData?.requireEmailVerification) {
+        return ensureProfileAfterAuthSignup(data)
       }
 
       return { success: false, error: 'Error al crear cuenta' }
@@ -465,6 +481,7 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
       setUser(null)
       setCarrito(null)
       setIsAuthenticated(false)
+      setEmailVerified(true)
     }
   }
 
@@ -558,16 +575,11 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
       const authUser = await fetchCurrentAuthUser()
 
       if (authUser) {
-        const { data: userData, error: userError } = await insforgeClient
-          .from('usuarios')
-          .select('*')
-          .eq('id', authUser.id)
-          .single()
-
-        if (userData && !userError) {
+        setEmailVerified(authUser.emailVerified ?? false)
+        const token = getStoredUserToken()
+        const userData = await fetchUsuarioRow(authUser.id, token)
+        if (userData) {
           setUser(userData)
-        } else {
-          console.error('Error refreshing user data:', userError)
         }
       }
     } catch {
@@ -580,6 +592,7 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
       user,
       carrito,
       isAuthenticated,
+      emailVerified,
       isLoading,
       login,
       register,

@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { insforgeClient } from "@/lib/insforge-client"
 import {
   AuthVerificationModal,
@@ -17,20 +17,27 @@ export function buildHomeVerifyUrl(email?: string) {
   return `/?${sp.toString()}`
 }
 
+export function buildProfileVerifyUrl(email?: string) {
+  const sp = new URLSearchParams()
+  sp.set("verify", "pending")
+  if (email) sp.set("email", email)
+  return `/perfil?${sp.toString()}`
+}
+
 export function setPendingVerifyEmail(email: string) {
   if (typeof window !== "undefined") {
     sessionStorage.setItem(VERIFY_EMAIL_KEY, email)
   }
 }
 
-function getPendingVerifyEmail(searchParams: URLSearchParams) {
-  const fromUrl = searchParams.get("email")
+export function getPendingVerifyEmail(searchParams?: URLSearchParams | null) {
+  const fromUrl = searchParams?.get("email")
   if (fromUrl) return fromUrl
   if (typeof window === "undefined") return ""
   return sessionStorage.getItem(VERIFY_EMAIL_KEY) ?? ""
 }
 
-function clearPendingVerifyEmail() {
+export function clearPendingVerifyEmail() {
   if (typeof window !== "undefined") {
     sessionStorage.removeItem(VERIFY_EMAIL_KEY)
   }
@@ -46,6 +53,7 @@ function stripQueryKeys(router: ReturnType<typeof useRouter>, keys: string[]) {
 }
 
 export function AuthVerificationGate() {
+  const pathname = usePathname()
   const searchParams = useSearchParams()
   const router = useRouter()
   const [variant, setVariant] = useState<VerificationModalVariant | null>(null)
@@ -53,11 +61,12 @@ export function AuthVerificationGate() {
   const [isResending, setIsResending] = useState(false)
   const [resendEmail, setResendEmail] = useState("")
 
-  const goHome = useCallback(() => {
+  const goAfterVerify = useCallback(() => {
     setVariant(null)
     clearPendingVerifyEmail()
-    router.replace("/")
-  }, [router])
+    const target = pathname === "/perfil" ? "/perfil" : "/"
+    router.replace(target, { scroll: false })
+  }, [router, pathname])
 
   const closeModal = useCallback(() => {
     setVariant(null)
@@ -131,7 +140,7 @@ export function AuthVerificationGate() {
       variant={variant}
       onClose={closeModal}
       errorMessage={errorMessage}
-      onSuccessContinue={goHome}
+      onSuccessContinue={goAfterVerify}
       onResendEmail={handleResend}
       isResending={isResending}
     />
