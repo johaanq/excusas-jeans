@@ -19,6 +19,83 @@ type AuthUserPayload = {
   updatedAt: string
 }
 
+function nombreDesdeAuthUser(
+  authUser: AuthUserPayload & { user_metadata?: { nombre?: string }; profile?: { nombre?: string } }
+): string {
+  const meta =
+    authUser.user_metadata?.nombre?.trim() ||
+    authUser.profile?.nombre?.trim()
+  if (meta) return meta
+  const local = authUser.email.split('@')[0]?.trim()
+  return local || 'Cliente'
+}
+
+async function fetchUsuarioRow(userId: string): Promise<Usuario | null> {
+  const { data, error } = await insforgeClient
+    .from('usuarios')
+    .select('*')
+    .eq('id', userId)
+    .single()
+  if (data && !error) return data
+  return null
+}
+
+async function createUserProfile(
+  userId: string,
+  data: Pick<RegisterData, 'nombre' | 'email' | 'telefono'>,
+  accessToken: string | null
+): Promise<{ ok: boolean; error?: string }> {
+  const profileRes = await fetch('/api/user/profile', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      userId,
+      nombre: data.nombre,
+      email: data.email,
+      telefono: data.telefono || null,
+      accessToken,
+    }),
+  })
+  const profileJson = await profileRes.json()
+  if (profileRes.ok) return { ok: true }
+
+  const msg = (profileJson.error as string) || ''
+  const alreadyInDb =
+    msg.toLowerCase().includes('duplicate') ||
+    msg.toLowerCase().includes('unique') ||
+    msg.toLowerCase().includes('ya existe')
+  if (alreadyInDb) return { ok: true }
+
+  return { ok: false, error: msg || 'Error al crear perfil de usuario' }
+}
+
+async function repairMissingUsuarioProfile(
+  userId: string,
+  email: string,
+  accessToken: string | null,
+  extras: { nombre?: string; telefono?: string | null }
+): Promise<Usuario | null> {
+  const existing = await fetchUsuarioRow(userId)
+  if (existing) return existing
+
+  const profile = await createUserProfile(
+    userId,
+    {
+      nombre: extras.nombre || email.split('@')[0] || 'Cliente',
+      email,
+      telefono: extras.telefono || '',
+    },
+    accessToken
+  )
+
+  if (!profile.ok) {
+    console.error('repairMissingUsuarioProfile:', profile.error)
+    return null
+  }
+
+  return fetchUsuarioRow(userId)
+}
+
 interface UserAuthContextType {
   user: Usuario | null
   carrito: Carrito | null
@@ -54,20 +131,25 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
       const authUser = await fetchCurrentAuthUser()
 
       if (authUser) {
-        const { data: userData, error: userError } = await insforgeClient
-          .from('usuarios')
-          .select('*')
-          .eq('id', authUser.id)
-          .single()
+        let userData = await fetchUsuarioRow(authUser.id)
 
-        if (userData && !userError) {
+        if (!userData) {
+          userData = await repairMissingUsuarioProfile(
+            authUser.id,
+            authUser.email,
+            getStoredUserToken(),
+            { nombre: nombreDesdeAuthUser(authUser) }
+          )
+        }
+
+        if (userData) {
           setUser(userData)
           setIsAuthenticated(true)
           await loadCart(userData.id)
           return
         }
 
-        console.error('Error fetching user data:', userError)
+        console.error('No se pudo cargar ni reparar el perfil de usuario')
       }
 
       clearStoredUserSession()
@@ -96,35 +178,6 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     checkAuth()
   }, [checkAuth])
-
-  const createUserProfile = async (
-    userId: string,
-    data: Pick<RegisterData, 'nombre' | 'email' | 'telefono'>,
-    accessToken: string | null
-  ): Promise<{ ok: boolean; error?: string }> => {
-    const profileRes = await fetch('/api/user/profile', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        userId,
-        nombre: data.nombre,
-        email: data.email,
-        telefono: data.telefono || null,
-        accessToken,
-      }),
-    })
-    const profileJson = await profileRes.json()
-    if (profileRes.ok) return { ok: true }
-
-    const msg = (profileJson.error as string) || ''
-    const alreadyInDb =
-      msg.toLowerCase().includes('duplicate') ||
-      msg.toLowerCase().includes('unique') ||
-      msg.toLowerCase().includes('ya existe')
-    if (alreadyInDb) return { ok: true }
-
-    return { ok: false, error: msg || 'Error al crear perfil de usuario' }
-  }
 
   const finalizeRegistration = async (
     authUser: AuthUserPayload,
@@ -278,24 +331,30 @@ export function UserAuthProvider({ children }: { children: ReactNode }) {
 
       if (authData?.user && authData?.session) {
         saveStoredUserToken(authData.session.access_token)
-        const { data: userData, error: userError } = await insforgeClient
-          .from('usuarios')
-          .select('*')
-          .eq('id', authData.user.id)
-          .single()
 
-        if (userData && !userError) {
+        let userData = await fetchUsuarioRow(authData.user.id)
+
+        if (!userData) {
+          userData = await repairMissingUsuarioProfile(
+            authData.user.id,
+            authData.user.email,
+            authData.session.access_token,
+            { nombre: nombreDesdeAuthUser(authData.user) }
+          )
+        }
+
+        if (userData) {
           setUser(userData)
           setIsAuthenticated(true)
           await loadCart(userData.id)
           return { success: true }
         }
 
-        console.error('User data error:', userError)
+        console.error('No se pudo cargar el perfil tras iniciar sesión')
         return {
           success: false,
           error:
-            'Tu cuenta existe en el sistema pero falta el perfil. Ve a Registrarse con el mismo correo y contraseña para completarla.',
+            'No pudimos completar tu perfil. Intenta de nuevo en unos segundos o contacta por WhatsApp.',
         }
       }
 

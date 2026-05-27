@@ -48,8 +48,9 @@ export function WelcomeDiscountModal() {
     <Dialog open={open} onOpenChange={(v) => !v && dismiss()}>
       <DialogContent
         className={cn(
-          "max-h-[min(86vh,34rem)] w-[min(100vw-1.25rem,20rem)] max-w-none gap-0 overflow-y-auto overflow-x-hidden rounded-2xl border-0 p-0 shadow-2xl",
-          "sm:w-[22rem]",
+          "w-[min(100vw-1.25rem,20rem)] max-w-none gap-0 overflow-x-hidden rounded-2xl border-0 p-0 shadow-2xl",
+          "max-h-[min(86vh,34rem)] overflow-y-auto",
+          "sm:w-[22rem] sm:max-h-none sm:overflow-hidden",
           "[&>button]:right-3 [&>button]:top-3 [&>button]:rounded-full [&>button]:bg-white/95 [&>button]:p-2 [&>button]:text-stone-800 [&>button]:opacity-100 [&>button]:shadow-md",
           "[&>button]:hover:bg-white"
         )}
@@ -58,7 +59,7 @@ export function WelcomeDiscountModal() {
           {WELCOME_DISCOUNT_PERCENT}% de descuento en tu primera compra
         </DialogTitle>
 
-        <div className="relative aspect-[16/9] sm:aspect-[4/5] w-full shrink-0 bg-stone-200">
+        <div className="relative aspect-[16/9] w-full shrink-0 bg-stone-200 sm:aspect-[5/4]">
           <Image
             src={PROMO_IMAGE}
             alt="Excusas Jeans — moda denim"
