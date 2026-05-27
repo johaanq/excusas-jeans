@@ -89,7 +89,7 @@ export const CHECKOUT_POLICIES: Record<CheckoutPolicyId, CheckoutPolicyContent> 
           'Condiciones: prenda sin uso, con etiquetas originales, sin olores ni daños, mismo modelo y color. Solo se cambia la talla, sujeto a stock disponible.',
           'Debes escribirnos por WhatsApp con fotos, número de pedido y la talla que necesitas.',
           'En Lima coordinamos recojo o entrega en punto acordado. En provincia el cliente asume el flete de envío y retorno salvo error nuestro.',
-          'Si no hay tu talla en stock, te avisamos; no se cambia por otro modelo ni se devuelve el dinero.',
+          'Si la talla por la que deseas hacer el cambio no está en stock, no se podrá realizar el cambio.',
         ],
       },
       {

@@ -47,14 +47,11 @@ export default function TerminosCondicionesPage() {
 
             <section>
               <h2 className="text-xl font-semibold text-gray-900 mb-3">3. Tienda online y pagos</h2>
-              <p className="mb-3">
-                Las compras en la web se pagan mediante Culqi (tarjeta, Yape y billeteras
-                habilitadas). No se acepta efectivo ni pago contra entrega en el checkout online. Los precios pueden cambiar sin aviso;
-                incluyen IGV cuando corresponda.
-              </p>
               <p>
-                Las fotos son referenciales. La disponibilidad depende del stock al momento de
-                procesar el pedido.
+                Las compras en la web se pagan con tarjeta, Yape y billeteras habilitadas en el
+                checkout. No se acepta efectivo ni pago contra entrega en línea. Los precios pueden
+                cambiar sin aviso; incluyen IGV cuando corresponda. La disponibilidad depende del
+                stock al momento de procesar el pedido.
               </p>
             </section>
 
@@ -62,11 +59,11 @@ export default function TerminosCondicionesPage() {
               <h2 className="text-xl font-semibold text-gray-900 mb-3">4. Envíos</h2>
               <p className="mb-3">
                 <strong>Lima:</strong> delivery a domicilio. Lima Metropolitana: S/ 15; Lima
-                Departamento: S/ 20 (según distrito en el checkout). Se paga junto con el pedido.
-                Los plazos de entrega son estimados y pueden variar.
+                Departamento: S/ 20 (según distrito en el checkout). Plazo habitual de 1 a 3 días
+                hábiles tras confirmar el pago; los domingos no hay reparto.
               </p>
               <p className="mb-3">
-                <strong>Provincia:</strong> envíos por Shalom. El pago online incluye S/ 10 por llevar
+                <strong>Provincia:</strong> envíos por Shalom. El pago online incluye S/ 9 por llevar
                 el pedido hasta la agencia; el flete en destino lo pagas al recoger. Si no hay
                 agencia Shalom en tu localidad, contáctanos por
                 WhatsApp para coordinar otra empresa de transporte.

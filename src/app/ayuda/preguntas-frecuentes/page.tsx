@@ -19,17 +19,17 @@ export default function PreguntasFrecuentesPage() {
     {
       question: "¿Cuáles son los métodos de pago en la tienda online?",
       answer:
-        "En la web pagas con Culqi: tarjetas de crédito o débito, Yape y billeteras que aparezcan en el checkout. No aceptamos efectivo ni contraentrega en línea. En tiendas físicas el pago es en el local, según cada punto de venta.",
+        "En la web puedes pagar con tarjeta de crédito o débito, Yape y billeteras habilitadas en el checkout. No aceptamos efectivo ni contraentrega en línea. En tiendas físicas el pago es en el local, según cada punto de venta.",
     },
     {
       question: "¿Cuánto tiempo demora el envío?",
       answer:
-        "Los plazos pueden variar según stock y transporte. En Lima coordinamos la entrega tras confirmar el pago; a provincia el tiempo depende de la ruta y la agencia. Te avisamos al confirmar tu pedido.",
+        "En Lima el plazo suele ser de 1 a 3 días hábiles tras confirmar el pago (los domingos no hay reparto). A provincia despachamos en 1 a 2 días hábiles hasta la agencia; el tiempo hasta tu ciudad depende de Shalom u otra empresa de transporte.",
     },
     {
       question: "¿Hacen envíos a todo el Perú?",
       answer:
-        "Sí, enviamos a todo el Perú. En Lima: S/ 15 (metropolitana) o S/ 20 (departamento) según tu distrito. En provincia: S/ 10 hasta agencia Shalom en el checkout; el flete al recoger lo pagas en la agencia. Si en tu zona no hay cobertura, escríbenos.",
+        "Sí, enviamos a todo el Perú. En Lima: S/ 15 (metropolitana) o S/ 20 (departamento) según tu distrito. En provincia: S/ 9 por llevar tu pedido hasta agencia Shalom; el flete al recoger lo pagas en la agencia. Si en tu zona no hay cobertura, escríbenos.",
     },
     {
       question: "¿Cómo puedo hacer seguimiento a mi pedido?",
