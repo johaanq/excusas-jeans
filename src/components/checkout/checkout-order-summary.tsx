@@ -7,6 +7,7 @@ import { CartItemImage } from "@/components/cart/cart-item-image"
 type Props = {
   items: CartItem[]
   subtotal: number
+  discountAmount?: number
   shippingCost: number | null
   shippingMethod: string | null
   shippingNote: string | null
@@ -15,11 +16,16 @@ type Props = {
 export const CheckoutOrderSummary = memo(function CheckoutOrderSummary({
   items,
   subtotal,
+  discountAmount = 0,
   shippingCost,
   shippingMethod,
   shippingNote,
 }: Props) {
-  const total = shippingCost != null ? subtotal + shippingCost : subtotal
+  const envio = shippingCost ?? 0
+  const total =
+    shippingCost != null
+      ? Math.max(0, subtotal - discountAmount + envio)
+      : Math.max(0, subtotal - discountAmount)
 
   return (
     <aside className="rounded-lg bg-stone-100/80 p-5 sm:p-6 lg:sticky lg:top-6">
@@ -55,6 +61,12 @@ export const CheckoutOrderSummary = memo(function CheckoutOrderSummary({
           <span>Subtotal</span>
           <span className="tabular-nums text-stone-900">S/ {subtotal.toFixed(2)}</span>
         </div>
+        {discountAmount > 0 && (
+          <div className="flex justify-between text-green-700">
+            <span>Descuento primera compra (5%)</span>
+            <span className="tabular-nums">− S/ {discountAmount.toFixed(2)}</span>
+          </div>
+        )}
         <div className="flex justify-between gap-4 text-stone-600">
           <span className="min-w-0">Envío</span>
           <span className="shrink-0 text-right tabular-nums text-stone-900">

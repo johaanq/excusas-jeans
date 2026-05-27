@@ -7,11 +7,16 @@ import {
   type ShippingPayload,
 } from '@/lib/orders-server'
 import { getShippingCost, isLimaProvincia } from '@/lib/shipping'
+import {
+  computeWelcomeDiscountAmount,
+  isEligibleForWelcomeDiscount,
+} from '@/lib/welcome-discount'
 
 type Body = {
   items: CheckoutLineItem[]
   shipping: ShippingPayload
   usuario_id?: string | null
+  apply_welcome_discount?: boolean
 }
 
 function validateShipping(shipping: ShippingPayload) {
@@ -49,13 +54,35 @@ export async function POST(request: Request) {
       body.shipping.tipo_envio,
       body.shipping.distrito ?? ''
     )
-    const total = subtotal + costo_envio
+    let descuento = 0
+    if (body.apply_welcome_discount) {
+      if (!body.usuario_id) {
+        return NextResponse.json(
+          { error: 'Inicia sesión para aplicar el descuento de primera compra.' },
+          { status: 400 }
+        )
+      }
+      const eligible = await isEligibleForWelcomeDiscount({
+        usuarioId: body.usuario_id,
+        email: body.shipping.email_cliente,
+      })
+      if (!eligible) {
+        return NextResponse.json(
+          { error: 'El descuento de primera compra no está disponible para esta cuenta o correo.' },
+          { status: 400 }
+        )
+      }
+      descuento = computeWelcomeDiscountAmount(subtotal)
+    }
+
+    const total = Math.max(0, subtotal - descuento + costo_envio)
 
     const pedido = await createPedidoPending({
       usuario_id: body.usuario_id,
       shipping: body.shipping,
       priced,
       subtotal,
+      descuento,
       costo_envio,
       total,
     })
@@ -64,6 +91,7 @@ export async function POST(request: Request) {
       pedido_id: pedido.id,
       numero_pedido: pedido.numero_pedido,
       subtotal,
+      descuento,
       costo_envio,
       total,
       amount_cents: solesToCulqiAmount(total),

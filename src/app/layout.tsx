@@ -8,6 +8,7 @@ import { AuthProvider } from "@/contexts/auth-context"
 import { UserAuthProvider } from "@/contexts/user-auth-context"
 import { AuthVerificationProvider } from "@/components/auth/auth-verification-provider"
 import { ServiceWorkerRegister } from "@/components/service-worker-register"
+import { WelcomeDiscountModal } from "@/components/promo/welcome-discount-modal"
 import { JsonLd } from "@/components/seo/json-ld"
 import { buildRootMetadata, buildSiteJsonLd } from "@/lib/seo"
 import "./globals.css"
@@ -48,6 +49,7 @@ export default function RootLayout({
             <AuthVerificationProvider>
               <CartProvider>
                 <Suspense fallback={null}>{children}</Suspense>
+                <WelcomeDiscountModal />
                 <ServiceWorkerRegister />
               </CartProvider>
             </AuthVerificationProvider>

@@ -16,6 +16,10 @@ import { useCart } from "@/hooks/use-cart"
 import { useUserAuth } from "@/contexts/user-auth-context"
 import { PROVINCIAS_PERU, DISTRITOS_LIMA } from "@/lib/peru-locations"
 import { isLimaProvincia } from "@/lib/shipping"
+import {
+  computeWelcomeDiscountAmount,
+  WELCOME_DISCOUNT_PERCENT,
+} from "@/lib/welcome-discount"
 import { WHATSAPP_URL } from "@/lib/site"
 import { cn } from "@/lib/utils"
 
@@ -33,6 +37,7 @@ export default function CheckoutPage() {
   const [shippingCost, setShippingCost] = useState<number | null>(null)
   const [shippingNote, setShippingNote] = useState("")
   const [shippingMethod, setShippingMethod] = useState<string | null>(null)
+  const [welcomeEligible, setWelcomeEligible] = useState(false)
 
   const [form, setForm] = useState({
     nombre: "",
@@ -71,6 +76,23 @@ export default function CheckoutPage() {
 
   const esLima = isLimaProvincia(form.provincia)
   const subtotal = totalPrice
+  const applyWelcomeDiscount = isAuthenticated && welcomeEligible
+  const discountAmount = applyWelcomeDiscount ? computeWelcomeDiscountAmount(subtotal) : 0
+
+  useEffect(() => {
+    const checkDiscount = async () => {
+      if (!isAuthenticated || !user?.id) {
+        setWelcomeEligible(false)
+        return
+      }
+      const params = new URLSearchParams({ usuario_id: user.id })
+      if (form.email.trim()) params.set("email", form.email.trim())
+      const res = await fetch(`/api/checkout/welcome-discount?${params}`)
+      const data = await res.json()
+      setWelcomeEligible(Boolean(res.ok && data.eligible))
+    }
+    if (!authLoading) void checkDiscount()
+  }, [isAuthenticated, user?.id, form.email, authLoading])
 
   const canPay = useMemo(() => {
     if (!items.length) return false
@@ -129,6 +151,7 @@ export default function CheckoutPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         usuario_id: isAuthenticated ? user?.id : null,
+        apply_welcome_discount: applyWelcomeDiscount,
         items: items.map((i) => ({
           producto_id: i.producto.id,
           color_id: i.color.id,
@@ -177,6 +200,21 @@ export default function CheckoutPage() {
             {error}
           </Alert>
         )}
+
+        {applyWelcomeDiscount ? (
+          <div className="mb-6 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-900">
+            Descuento de primera compra ({WELCOME_DISCOUNT_PERCENT}%) aplicado: − S/{" "}
+            {discountAmount.toFixed(2)}
+          </div>
+        ) : !isAuthenticated ? (
+          <div className="mb-6 rounded-lg border border-stone-200 bg-white px-4 py-3 text-sm text-stone-700">
+            <Link href="/cuenta?redirect=/checkout" className="font-medium text-stone-900 underline">
+              Regístrate
+            </Link>{" "}
+            y obtén {WELCOME_DISCOUNT_PERCENT}% de descuento en tu primera compra (solo con cuenta
+            activa).
+          </div>
+        ) : null}
 
         <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1fr_380px] lg:gap-12">
           <div className="space-y-8">
@@ -437,6 +475,7 @@ export default function CheckoutPage() {
           <CheckoutOrderSummary
             items={items}
             subtotal={subtotal}
+            discountAmount={discountAmount}
             shippingCost={shippingCost}
             shippingMethod={shippingMethod}
             shippingNote={shippingNote}

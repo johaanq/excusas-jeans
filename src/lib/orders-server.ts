@@ -106,6 +106,7 @@ export async function createPedidoPending(params: {
   shipping: ShippingPayload
   priced: Awaited<ReturnType<typeof validateAndPriceCartItems>>['priced']
   subtotal: number
+  descuento?: number
   costo_envio: number
   total: number
 }) {
@@ -133,6 +134,10 @@ export async function createPedidoPending(params: {
       costo_envio: params.costo_envio,
       total: params.total,
       moneda: 'PEN',
+      notas:
+        params.descuento && params.descuento > 0
+          ? `Descuento primera compra (${params.descuento.toFixed(2)} PEN)`
+          : null,
     })
     .select('*')
     .single()
