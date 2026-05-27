@@ -57,9 +57,6 @@ function HomePageContent() {
 
           <div className="mx-auto w-full max-w-4xl px-0 sm:px-2">
             <HomePromoVideo />
-            <p className="mt-3 text-right text-xs font-medium uppercase tracking-wider text-stone-500 sm:text-sm">
-              Stretch Semi Cadera
-            </p>
           </div>
         </section>
       </main>
