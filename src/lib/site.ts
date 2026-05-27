@@ -14,6 +14,14 @@ export function getContactEmail(): string {
   return process.env.NEXT_PUBLIC_CONTACT_EMAIL?.trim() || CONTACT_EMAIL
 }
 
+/** Video promocional del home (CDN; el MP4 local está en .vercelignore). */
+const DEFAULT_HERO_VIDEO_URL =
+  'https://cdn.discordapp.com/attachments/1308284399061696572/1509056475715338351/video-1-excusas.mp4?ex=6a17c9dc&is=6a16785c&hm=bb6f452bfbcaf57196a5becea08e9264cb093a720f5443e291ae2ece230ad5a5'
+
+export function getHeroVideoUrl(): string {
+  return process.env.NEXT_PUBLIC_HERO_VIDEO_URL?.trim() || DEFAULT_HERO_VIDEO_URL
+}
+
 export type StoreLocation = {
   id: string
   label: string
