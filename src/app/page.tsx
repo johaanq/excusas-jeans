@@ -55,7 +55,7 @@ function HomePageContent() {
         <section className="mb-12 md:mb-20">
           <div className="mb-6 border-t border-stone-300 md:mb-8" />
 
-          <div className="mx-auto w-full max-w-4xl px-0 sm:px-2">
+          <div className="mx-auto w-full min-w-0 max-w-4xl">
             <HomePromoVideo />
           </div>
         </section>

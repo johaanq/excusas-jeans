@@ -34,33 +34,45 @@ export function HomePromoVideo() {
   if (failed) return null
 
   return (
-    <>
-      <div ref={containerRef} className={cn(!playing && "h-0 overflow-hidden")}>
+    <div className="w-full min-w-0 max-w-full">
+      <div
+        ref={containerRef}
+        className={cn(
+          "relative w-full max-w-full overflow-hidden rounded-lg bg-stone-100 shadow-lg",
+          playing ? "aspect-[4/5] sm:aspect-[4/3]" : "h-0 overflow-hidden"
+        )}
+      >
         {inView ? (
           <video
-          ref={videoRef}
-          src={getHeroVideoUrl()}
-          autoPlay
-          loop
-          muted
-          playsInline
-          preload="none"
-          className={cn(
-            "aspect-[4/5] w-full rounded-lg object-cover shadow-lg sm:aspect-[4/3]",
-            !playing && "pointer-events-none invisible absolute h-0 w-0"
-          )}
-          style={{ pointerEvents: "none" }}
-          aria-label="Video promocional Excusas Jeans"
-          onPlaying={() => setPlaying(true)}
-          onError={() => setFailed(true)}
+            ref={videoRef}
+            src={getHeroVideoUrl()}
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="none"
+            className={cn(
+              "absolute left-0 top-0 block h-full w-full object-contain object-center",
+              !playing && "opacity-0"
+            )}
+            style={{
+              pointerEvents: "none",
+              width: "100%",
+              height: "100%",
+              maxWidth: "100%",
+              objectFit: "contain",
+            }}
+            aria-label="Video promocional Excusas Jeans"
+            onPlaying={() => setPlaying(true)}
+            onError={() => setFailed(true)}
           />
         ) : null}
       </div>
       {playing ? (
-        <p className="mt-3 text-right text-xs font-medium uppercase tracking-wider text-stone-500 sm:text-sm">
+        <p className="mt-3 px-4 text-right text-xs font-medium uppercase tracking-wider text-stone-500 sm:px-0 sm:text-sm">
           Stretch Semi Cadera
         </p>
       ) : null}
-    </>
+    </div>
   )
 }
