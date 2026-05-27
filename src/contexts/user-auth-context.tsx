@@ -20,12 +20,27 @@ type AuthUserPayload = {
   updatedAt: string
 }
 
-function nombreDesdeAuthUser(
-  authUser: AuthUserPayload & { user_metadata?: { nombre?: string }; profile?: { nombre?: string } }
-): string {
+type AuthUserNameSource = {
+  email: string
+  user_metadata?: Record<string, unknown> | null
+  metadata?: Record<string, unknown> | null
+  profile?: Record<string, unknown> | null
+}
+
+function nombreFromRecord(record?: Record<string, unknown> | null): string | undefined {
+  if (!record) return undefined
+  for (const key of ['nombre', 'name'] as const) {
+    const value = record[key]
+    if (typeof value === 'string' && value.trim()) return value.trim()
+  }
+  return undefined
+}
+
+function nombreDesdeAuthUser(authUser: AuthUserNameSource): string {
   const meta =
-    authUser.user_metadata?.nombre?.trim() ||
-    authUser.profile?.nombre?.trim()
+    nombreFromRecord(authUser.user_metadata) ||
+    nombreFromRecord(authUser.metadata) ||
+    nombreFromRecord(authUser.profile)
   if (meta) return meta
   const local = authUser.email.split('@')[0]?.trim()
   return local || 'Cliente'
