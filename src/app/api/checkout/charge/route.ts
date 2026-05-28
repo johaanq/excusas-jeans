@@ -6,6 +6,7 @@ import {
   clearUserCart,
   getPedidoById,
 } from '@/lib/orders-server'
+import { sendPedidoEstadoEmail } from '@/lib/order-notifications'
 
 type Body = {
   pedido_id: string
@@ -52,6 +53,15 @@ export async function POST(request: Request) {
 
     if (updated?.usuario_id) {
       await clearUserCart(updated.usuario_id)
+    }
+
+    try {
+      await sendPedidoEstadoEmail({
+        pedido,
+        estado: 'pagado',
+      })
+    } catch (mailError) {
+      console.error('sendPedidoEstadoEmail(pagado):', mailError)
     }
 
     return NextResponse.json({

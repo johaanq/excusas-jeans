@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import { adminQuery } from "@/lib/admin-api"
+import { adminAuthedPost, adminQuery } from "@/lib/admin-api"
 import type { Pedido, PedidoEstado, TipoEnvio } from "@/types/pedido"
 import { PEDIDO_ESTADO_LABEL } from "@/types/pedido"
 import { cn } from "@/lib/utils"
@@ -19,6 +19,7 @@ type PedidoConItems = Pedido & {
 }
 
 const ESTADOS: PedidoEstado[] = [
+  "pendiente_pago",
   "pagado",
   "en_preparacion",
   "enviado",
@@ -42,8 +43,7 @@ export function AdminOrders() {
         select: "*, pedido_items(*)",
         order: { column: "created_at", ascending: false },
       })
-      const list = (data ?? []).filter((p) => p.estado !== "pendiente_pago")
-      setPedidos(list)
+      setPedidos(data ?? [])
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error al cargar pedidos")
     } finally {
@@ -60,12 +60,29 @@ export function AdminOrders() {
 
   const updateEstado = async (id: string, estado: PedidoEstado) => {
     try {
-      await adminQuery({
-        table: "pedidos",
-        op: "update",
-        match: { id },
-        data: { estado },
+      let comprobanteUrl: string | null = null
+      if (estado === "enviado") {
+        const value = window.prompt(
+          "Pega la URL de la foto/comprobante de envío (requerido para estado Enviado):"
+        )
+        if (!value?.trim()) return
+        comprobanteUrl = value.trim()
+      }
+
+      const result = await adminAuthedPost<{
+        ok: boolean
+        emailSent: boolean
+        whatsappUrl: string
+      }>("/api/admin/pedidos/status", {
+        pedidoId: id,
+        estado,
+        comprobanteUrl,
       })
+
+      if (result.whatsappUrl && (estado === "en_preparacion" || estado === "enviado")) {
+        window.open(result.whatsappUrl, "_blank", "noopener,noreferrer")
+      }
+
       setPedidos((prev) => prev.map((p) => (p.id === id ? { ...p, estado } : p)))
     } catch (e) {
       alert(e instanceof Error ? e.message : "Error al actualizar")

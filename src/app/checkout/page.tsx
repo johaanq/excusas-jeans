@@ -32,6 +32,7 @@ export default function CheckoutPage() {
   const router = useRouter()
   const { items, totalPrice, clearCart } = useCart()
   const { user, isAuthenticated, isLoading: authLoading } = useUserAuth()
+  const hasCulqiPublicKey = Boolean(process.env.NEXT_PUBLIC_CULQI_PUBLIC_KEY?.trim())
 
   const [error, setError] = useState("")
   const [shippingCost, setShippingCost] = useState<number | null>(null)
@@ -146,6 +147,9 @@ export default function CheckoutPage() {
 
   const prepareCulqi = async (): Promise<CulqiPaySession> => {
     setError("")
+    if (!hasCulqiPublicKey) {
+      throw new Error("Pasarela no configurada: falta NEXT_PUBLIC_CULQI_PUBLIC_KEY")
+    }
     const res = await fetch("/api/checkout/prepare", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -201,12 +205,7 @@ export default function CheckoutPage() {
           </Alert>
         )}
 
-        {applyWelcomeDiscount ? (
-          <div className="mb-6 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-900">
-            Descuento de primera compra ({WELCOME_DISCOUNT_PERCENT}%) aplicado: − S/{" "}
-            {discountAmount.toFixed(2)}
-          </div>
-        ) : !isAuthenticated ? (
+        {!isAuthenticated ? (
           <div className="mb-6 rounded-lg border border-stone-200 bg-white px-4 py-3 text-sm text-stone-700">
             <Link href="/cuenta?redirect=/checkout" className="font-medium text-stone-900 underline">
               Regístrate
@@ -433,10 +432,9 @@ export default function CheckoutPage() {
                   Tarjeta, Yape y billeteras
                 </p>
                 <p className="mt-1 text-xs leading-relaxed text-stone-500">
-                  Al pulsar el botón se abre la pasarela de pago segura. No guardamos los datos de
-                  tu tarjeta en nuestros servidores.
+                  Al pulsar el botón se abre la pasarela de pago segura. El pedido se confirma
+                  cuando Culqi aprueba el pago.
                 </p>
-
                 <CulqiCheckoutButton
                   onPrepare={prepareCulqi}
                   onToken={async (tokenId, session) => {
@@ -446,13 +444,13 @@ export default function CheckoutPage() {
                       setError(e instanceof Error ? e.message : "Error al pagar")
                     }
                   }}
-                  disabled={!canPay}
+                  disabled={!canPay || !hasCulqiPublicKey}
                 >
                   {({ pay, loading: culqiLoading, ready }) => (
                     <button
                       type="button"
                       className="mt-5 flex h-12 w-full items-center justify-center rounded-md bg-stone-900 text-sm font-semibold text-white transition-colors hover:bg-stone-800 disabled:cursor-not-allowed disabled:opacity-50"
-                      disabled={!canPay || culqiLoading || !ready}
+                      disabled={!canPay || culqiLoading || !ready || !hasCulqiPublicKey}
                       onClick={pay}
                     >
                       {culqiLoading ? (
@@ -466,6 +464,11 @@ export default function CheckoutPage() {
                     </button>
                   )}
                 </CulqiCheckoutButton>
+                {!hasCulqiPublicKey && (
+                  <p className="mt-2 text-xs text-amber-700">
+                    Configura `NEXT_PUBLIC_CULQI_PUBLIC_KEY` para habilitar pagos.
+                  </p>
+                )}
               </div>
 
               <CheckoutPolicyModals />

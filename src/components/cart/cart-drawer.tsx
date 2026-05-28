@@ -16,7 +16,7 @@ interface CartDrawerProps {
 }
 
 export function CartDrawer({ isOpen = false, onOpenChange }: CartDrawerProps) {
-  const { items, totalItems, totalPrice, updateQuantity, removeItem, clearCart } =
+  const { items, totalItems, totalPrice, updateQuantity, removeItem } =
     useCart()
   const { user, isAuthenticated } = useUserAuth()
 
@@ -43,9 +43,8 @@ export function CartDrawer({ isOpen = false, onOpenChange }: CartDrawerProps) {
       WHATSAPP_NUMBER_E164,
       generateWhatsAppMessage(items, customerInfo)
     )
-    clearCart()
     close()
-  }, [items, isAuthenticated, user, clearCart, close])
+  }, [items, isAuthenticated, user, close])
 
   const itemCountLabel = useMemo(() => {
     if (totalItems === 1) return "1 artículo"

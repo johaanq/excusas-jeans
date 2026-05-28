@@ -143,8 +143,6 @@ export async function openWhatsApp(phoneNumber: string, message?: string) {
     const decodedMessage = decodeURIComponent(message)
     try {
       await copyToClipboard(decodedMessage)
-      // Mostrar notificación de que el mensaje fue copiado
-      showClipboardNotification()
     } catch (error) {
       console.error('Error al copiar al portapapeles:', error)
     }
@@ -169,44 +167,6 @@ export async function openWhatsApp(phoneNumber: string, message?: string) {
       : `https://web.whatsapp.com/send?phone=${cleanPhoneNumber}`
     window.open(webUrl, '_blank')
   }
-}
-
-// Funciones de WhatsApp Desktop removidas para simplificar
-
-// Función para mostrar notificación de portapapeles
-export function showClipboardNotification() {
-  // Crear una notificación temporal
-  const notification = document.createElement('div')
-  notification.innerHTML = `
-    <div style="
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: #25D366;
-      color: white;
-      padding: 12px 16px;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      z-index: 10000;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      font-size: 14px;
-      max-width: 300px;
-    ">
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <span>✅</span>
-        <span><strong>Mensaje copiado!</strong><br>Presiona Ctrl+V en WhatsApp para pegarlo</span>
-      </div>
-    </div>
-  `
-  
-  document.body.appendChild(notification)
-  
-  // Remover la notificación después de 4 segundos
-  setTimeout(() => {
-    if (notification.parentNode) {
-      notification.parentNode.removeChild(notification)
-    }
-  }, 4000)
 }
 
 // Funciones complejas de WhatsApp Desktop removidas para simplificar

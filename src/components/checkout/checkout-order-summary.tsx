@@ -61,12 +61,6 @@ export const CheckoutOrderSummary = memo(function CheckoutOrderSummary({
           <span>Subtotal</span>
           <span className="tabular-nums text-stone-900">S/ {subtotal.toFixed(2)}</span>
         </div>
-        {discountAmount > 0 && (
-          <div className="flex justify-between text-green-700">
-            <span>Descuento primera compra (5%)</span>
-            <span className="tabular-nums">− S/ {discountAmount.toFixed(2)}</span>
-          </div>
-        )}
         <div className="flex justify-between gap-4 text-stone-600">
           <span className="min-w-0">Envío</span>
           <span className="shrink-0 text-right tabular-nums text-stone-900">

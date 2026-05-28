@@ -21,6 +21,25 @@ export type AdminQueryPayload = {
   single?: boolean
 }
 
+export async function adminAuthedPost<T = unknown>(url: string, payload: Record<string, unknown>): Promise<T> {
+  const credentials = getAdminCredentials()
+  if (!credentials) {
+    throw new Error('Sesión de administrador expirada. Vuelve a iniciar sesión.')
+  }
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ credentials, ...payload }),
+  })
+
+  const json = await res.json()
+  if (!res.ok) {
+    throw new Error(json.error || 'Error en operación de administrador')
+  }
+  return json as T
+}
+
 export function getAdminCredentials(): AdminCredentials | null {
   if (typeof window === 'undefined') return null
   const raw = localStorage.getItem('admin_user')
