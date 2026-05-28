@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <title>Excusas Jeans BIMI Logo</title>
+  <g fill="none" stroke="#5BB3A5" stroke-linejoin="miter" stroke-width="30">
+    <polygon points="256,30 341,151 256,272 171,151" />
+    <polygon points="30,256 151,171 272,256 151,341" />
+    <polygon points="482,256 361,171 240,256 361,341" />
+    <polygon points="256,482 341,361 256,240 171,361" />
+  </g>
+</svg>

@@ -228,9 +228,9 @@ export default function PerfilPage() {
     Boolean(formData.sede_envio)
 
   const buttonBase =
-    'inline-flex items-center gap-2 border border-gray-900 px-4 py-2 text-xs font-medium uppercase tracking-[0.18em] transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-gray-900'
+    'inline-flex items-center gap-2 border border-gray-900 px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-gray-900'
   const buttonGhost =
-    'inline-flex items-center gap-2 border border-gray-300 px-4 py-2 text-xs font-medium uppercase tracking-[0.16em] text-gray-700 transition-colors hover:border-gray-800 hover:text-gray-900 focus:outline-none focus-visible:ring-1 focus-visible:ring-gray-900'
+    'inline-flex items-center gap-2 border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:border-gray-800 hover:text-gray-900 focus:outline-none focus-visible:ring-1 focus-visible:ring-gray-900'
 
   const handleInputChange = (field: keyof ProfileFormData, value: string) => {
     setFormData(prev => ({
@@ -319,7 +319,7 @@ export default function PerfilPage() {
       <main className="container mx-auto max-w-5xl px-4 pb-16 pt-28 sm:pt-32">
         <div className="mb-10 flex flex-col gap-4 border-b border-gray-200 pb-6 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <p className="text-xs uppercase tracking-[0.22em] text-gray-500">Mi cuenta</p>
+            <p className="text-sm text-gray-500">Mi cuenta</p>
             <h1 className="mt-2 text-2xl font-semibold text-gray-900 sm:text-[2rem]">
               Bienvenido, {firstNames}
             </h1>
@@ -349,7 +349,7 @@ export default function PerfilPage() {
             <button
               type="button"
               onClick={() => router.replace('/perfil', { scroll: false })}
-              className="text-xs uppercase tracking-[0.14em] text-gray-500 underline underline-offset-4"
+              className="text-sm text-gray-500 underline underline-offset-4"
             >
               Entendido
             </button>

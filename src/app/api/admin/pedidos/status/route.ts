@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     const admin = getInsforgeAdmin()
     const { data: pedido, error: fetchErr } = await admin.database
       .from('pedidos')
-      .select('*')
+      .select('*, pedido_items(*)')
       .eq('id', pedidoId)
       .single()
 
@@ -65,6 +65,7 @@ export async function POST(request: Request) {
         pedido,
         estado,
         comprobanteUrl,
+        items: pedido.pedido_items ?? [],
       })
       emailSent = true
     } catch (err) {

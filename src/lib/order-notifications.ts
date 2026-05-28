@@ -25,6 +25,21 @@ function currency(value: number): string {
   return `S/ ${Number(value).toFixed(2)}`
 }
 
+function renderPedidoItemsTable(items: PedidoItemEmail[]): string {
+  if (!items.length) return ''
+  const rows = items
+    .map(
+      (item) =>
+        `<tr>
+          <td style="padding:6px 0;">${escapeHtml(item.producto_nombre)} (${escapeHtml(item.color_nombre)}) T${escapeHtml(item.talla)} x${item.cantidad}</td>
+          <td style="padding:6px 0;text-align:right;">${currency(item.subtotal)}</td>
+        </tr>`
+    )
+    .join('')
+
+  return `<table style="width:100%;border-collapse:collapse;margin-top:12px;">${rows}</table>`
+}
+
 function estadoLabel(estado: PedidoEstado): string {
   switch (estado) {
     case 'pendiente_pago':
@@ -65,15 +80,6 @@ export async function sendPedidoRecibidoEmail(params: {
   items: PedidoItemEmail[]
 }) {
   const { pedido, items } = params
-  const rows = items
-    .map(
-      (item) =>
-        `<tr>
-          <td style="padding:6px 0;">${escapeHtml(item.producto_nombre)} (${escapeHtml(item.color_nombre)}) T${escapeHtml(item.talla)} x${item.cantidad}</td>
-          <td style="padding:6px 0;text-align:right;">${currency(item.subtotal)}</td>
-        </tr>`
-    )
-    .join('')
 
   const shippingInfo =
     pedido.tipo_envio === 'provincia'
@@ -90,9 +96,7 @@ export async function sendPedidoRecibidoEmail(params: {
     pedido.dni ?? '-'
   )}</p>
       <p><strong>Envío:</strong> ${shippingInfo}</p>
-      <table style="width:100%;border-collapse:collapse;margin-top:12px;">
-        ${rows}
-      </table>
+      ${renderPedidoItemsTable(items)}
       <hr style="margin:14px 0;border:none;border-top:1px solid #ddd;" />
       <p>Subtotal: ${currency(pedido.subtotal)}</p>
       <p>Envío: ${currency(pedido.costo_envio)}</p>
@@ -111,8 +115,9 @@ export async function sendPedidoEstadoEmail(params: {
   pedido: Pick<Pedido, 'numero_pedido' | 'email_cliente' | 'nombre_cliente' | 'telefono' | 'tipo_envio'>
   estado: PedidoEstado
   comprobanteUrl?: string | null
+  items?: PedidoItemEmail[]
 }) {
-  const { pedido, estado, comprobanteUrl } = params
+  const { pedido, estado, comprobanteUrl, items = [] } = params
   const trackingNote =
     estado === 'enviado' && pedido.tipo_envio === 'provincia'
       ? `<p>Para hacer seguimiento de tu envío por Shalom, consulta: <a href="${SHALOM_TRACKING_URL}">${SHALOM_TRACKING_URL}</a></p>`
@@ -129,6 +134,7 @@ export async function sendPedidoEstadoEmail(params: {
       <p>Hola ${escapeHtml(pedido.nombre_cliente)}, tu pedido ahora está en estado: <strong>${escapeHtml(
     estadoLabel(estado)
   )}</strong>.</p>
+      ${renderPedidoItemsTable(items)}
       ${comprobanteBlock}
       ${trackingNote}
       <p>Si necesitas ayuda, escríbenos por WhatsApp ${escapeHtml(WHATSAPP_NUMBER_DISPLAY)}.</p>

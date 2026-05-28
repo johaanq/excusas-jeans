@@ -5,7 +5,7 @@ import { adminAuthedPost, adminQuery } from "@/lib/admin-api"
 import type { Pedido, PedidoEstado, TipoEnvio } from "@/types/pedido"
 import { PEDIDO_ESTADO_LABEL } from "@/types/pedido"
 import { cn } from "@/lib/utils"
-import { Package, MapPin, Phone, User } from "lucide-react"
+import { Package, MapPin, Phone, User, ReceiptText, CalendarDays } from "lucide-react"
 
 type PedidoConItems = Pedido & {
   pedido_items?: {
@@ -26,6 +26,10 @@ const ESTADOS: PedidoEstado[] = [
   "entregado",
   "cancelado",
 ]
+
+function money(value: number) {
+  return `S/${Number(value).toFixed(2)}`
+}
 
 export function AdminOrders() {
   const [tab, setTab] = useState<"todos" | TipoEnvio>("todos")
@@ -95,13 +99,13 @@ export function AdminOrders() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Pedidos en línea</h1>
-        <p className="text-slate-600 text-sm mt-1">
+        <h1 className="text-2xl font-semibold text-slate-900">Pedidos en línea</h1>
+        <p className="mt-1 text-sm text-slate-600">
           Lima: metropolitana S/15 · departamento S/20. Provincia: S/9 hasta agencia Shalom.
         </p>
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 pb-3">
         {(
           [
             { key: "todos" as const, label: `Todos (${pedidos.length})` },
@@ -114,10 +118,10 @@ export function AdminOrders() {
             type="button"
             onClick={() => setTab(key)}
             className={cn(
-              "rounded-lg px-4 py-2 text-sm font-medium transition-colors",
+              "border-b-2 px-3 py-1.5 text-sm transition-colors",
               tab === key
-                ? "bg-emerald-600 text-white"
-                : "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50"
+                ? "border-slate-900 font-medium text-slate-900"
+                : "border-transparent text-slate-500 hover:text-slate-800"
             )}
           >
             {label}
@@ -126,114 +130,136 @@ export function AdminOrders() {
         <button
           type="button"
           onClick={load}
-          className="ml-auto text-sm text-emerald-700 hover:underline"
+          className="ml-auto border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-100"
         >
           Actualizar
         </button>
       </div>
 
       {error && (
-        <p className="text-red-600 text-sm bg-red-50 border border-red-100 rounded-lg p-3">{error}</p>
+        <p className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{error}</p>
       )}
 
       {loading ? (
         <p className="text-slate-500">Cargando pedidos…</p>
       ) : filtered.length === 0 ? (
-        <p className="text-slate-500 bg-white rounded-lg border p-8 text-center">
+        <p className="rounded-xl border border-slate-200 bg-white p-8 text-center text-slate-500">
           No hay pedidos pagados en esta categoría.
         </p>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-5">
           {filtered.map((pedido) => (
-            <article
-              key={pedido.id}
-              className="bg-white rounded-xl border border-slate-200 overflow-hidden"
-            >
-              <div className="flex flex-wrap items-start justify-between gap-3 p-4 border-b bg-slate-50/80">
-                <div>
-                  <p className="font-semibold text-slate-900">{pedido.numero_pedido}</p>
-                  <p className="text-xs text-slate-500">
-                    {new Date(pedido.created_at).toLocaleString("es-PE")} ·{" "}
-                    <span
-                      className={cn(
-                        "font-medium",
-                        pedido.tipo_envio === "lima" ? "text-blue-700" : "text-amber-700"
-                      )}
+            <article key={pedido.id} className="overflow-hidden border border-slate-200 bg-white">
+              <div className="border-b border-slate-200 bg-slate-50/80 p-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="space-y-2">
+                    <p className="text-base font-semibold text-slate-900">{pedido.numero_pedido}</p>
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-slate-600">
+                      <span className="inline-flex items-center gap-1">
+                        <CalendarDays className="h-3.5 w-3.5" />
+                        {new Date(pedido.created_at).toLocaleString("es-PE")}
+                      </span>
+                      <span>·</span>
+                      <span className="font-medium">
+                        {pedido.tipo_envio === "lima" ? "Lima" : "Provincia"}
+                      </span>
+                      <span>·</span>
+                      <span className="font-medium text-slate-700">
+                        {PEDIDO_ESTADO_LABEL[pedido.estado]}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xl font-bold text-slate-900">{money(pedido.total)}</span>
+                    <select
+                      value={pedido.estado}
+                      onChange={(e) => updateEstado(pedido.id, e.target.value as PedidoEstado)}
+                      className="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm"
                     >
-                      {pedido.tipo_envio === "lima" ? "Lima" : "Provincia"}
-                    </span>
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-lg font-bold text-emerald-700">
-                    S/{Number(pedido.total).toFixed(2)}
-                  </span>
-                  <select
-                    value={pedido.estado}
-                    onChange={(e) => updateEstado(pedido.id, e.target.value as PedidoEstado)}
-                    className="text-sm border rounded-md px-2 py-1"
-                  >
-                    {ESTADOS.map((s) => (
-                      <option key={s} value={s}>
-                        {PEDIDO_ESTADO_LABEL[s]}
-                      </option>
-                    ))}
-                  </select>
+                      {ESTADOS.map((s) => (
+                        <option key={s} value={s}>
+                          {PEDIDO_ESTADO_LABEL[s]}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               </div>
 
-              <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                <div className="space-y-2">
-                  <p className="font-medium text-slate-800 flex items-center gap-2">
+              <div className="grid grid-cols-1 gap-4 p-4 text-sm md:grid-cols-2">
+                <div className="border border-slate-200 bg-slate-50/50 p-3">
+                  <p className="mb-2 flex items-center gap-2 font-medium text-slate-800">
                     <User className="h-4 w-4" /> Cliente
                   </p>
-                  <p>{pedido.nombre_cliente}</p>
-                  <p className="flex items-center gap-2 text-slate-600">
+                  <p className="text-slate-900">{pedido.nombre_cliente}</p>
+                  <p className="mt-1 flex items-center gap-2 text-slate-600">
                     <Phone className="h-3.5 w-3.5" />
                     <a href={`https://wa.me/51${pedido.telefono.replace(/\D/g, "")}`} className="hover:underline">
                       {pedido.telefono}
                     </a>
                   </p>
-                  <p className="text-slate-600">{pedido.email_cliente}</p>
-                  {pedido.dni && <p className="text-slate-600">DNI: {pedido.dni}</p>}
+                  <p className="mt-1 text-slate-600">{pedido.email_cliente}</p>
+                  {pedido.dni && <p className="mt-1 text-slate-600">DNI: {pedido.dni}</p>}
                 </div>
-                <div className="space-y-2">
-                  <p className="font-medium text-slate-800 flex items-center gap-2">
+                <div className="border border-slate-200 bg-slate-50/50 p-3">
+                  <p className="mb-2 flex items-center gap-2 font-medium text-slate-800">
                     <MapPin className="h-4 w-4" /> Envío
                   </p>
-                  <p>
+                  <p className="text-slate-900">
                     {pedido.provincia}
                     {pedido.distrito ? ` — ${pedido.distrito}` : ""}
                   </p>
-                  {pedido.direccion && <p>{pedido.direccion}</p>}
+                  {pedido.direccion && <p className="mt-1 text-slate-700">{pedido.direccion}</p>}
                   {pedido.referencia && (
-                    <p className="text-slate-500">Ref: {pedido.referencia}</p>
+                    <p className="mt-1 text-slate-500">Ref: {pedido.referencia}</p>
                   )}
                   {pedido.tipo_envio === "provincia" && (
-                    <p className="text-amber-800 bg-amber-50 rounded px-2 py-1 text-xs">
+                    <p className="mt-2 border border-amber-200 bg-amber-50 px-2 py-1 text-xs text-amber-800">
                       {pedido.empresa_envio}: {pedido.sede_envio}
                     </p>
                   )}
                   {pedido.tipo_envio === "lima" && pedido.costo_envio > 0 && (
-                    <p className="text-slate-600">Envío pagado: S/{Number(pedido.costo_envio).toFixed(2)}</p>
+                    <p className="mt-1 text-slate-600">Envío pagado: {money(pedido.costo_envio)}</p>
                   )}
                 </div>
               </div>
 
-              <div className="px-4 pb-4">
-                <p className="font-medium text-slate-800 flex items-center gap-2 mb-2 text-sm">
-                  <Package className="h-4 w-4" /> Productos
+              <div className="border-t border-slate-200 px-4 py-4">
+                <p className="mb-3 flex items-center gap-2 font-medium text-slate-800">
+                  <Package className="h-4 w-4" /> Detalle de productos
                 </p>
-                <ul className="text-sm text-slate-700 space-y-1">
+                <div className="space-y-2">
                   {(pedido.pedido_items ?? []).map((item) => (
-                    <li key={item.id} className="flex justify-between gap-2">
-                      <span>
-                        {item.producto_nombre} · {item.color_nombre} · T{item.talla} ×{item.cantidad}
-                      </span>
-                      <span>S/{Number(item.subtotal).toFixed(2)}</span>
-                    </li>
+                    <div
+                      key={item.id}
+                      className="grid grid-cols-[1.2fr_1fr_80px_80px_100px] items-center gap-2 border border-slate-200 bg-white px-3 py-2 text-sm"
+                    >
+                      <div>
+                        <p className="font-medium text-slate-900">{item.producto_nombre}</p>
+                        <p className="mt-0.5 flex items-center gap-1 text-xs text-slate-500">
+                          <ReceiptText className="h-3.5 w-3.5" />
+                          Modelo
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-slate-700">{item.color_nombre}</p>
+                        <p className="mt-0.5 text-xs text-slate-500">Color</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="font-medium text-slate-800">T{item.talla}</p>
+                        <p className="mt-0.5 text-xs text-slate-500">Talla</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="font-medium text-slate-800">{item.cantidad}</p>
+                        <p className="mt-0.5 text-xs text-slate-500">Cant.</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold text-slate-900">{money(item.subtotal)}</p>
+                        <p className="mt-0.5 text-xs text-slate-500">Subtotal</p>
+                      </div>
+                    </div>
                   ))}
-                </ul>
+                </div>
               </div>
             </article>
           ))}

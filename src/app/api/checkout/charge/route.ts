@@ -59,6 +59,7 @@ export async function POST(request: Request) {
       await sendPedidoEstadoEmail({
         pedido,
         estado: 'pagado',
+        items: pedido.pedido_items ?? [],
       })
     } catch (mailError) {
       console.error('sendPedidoEstadoEmail(pagado):', mailError)
