@@ -5,7 +5,10 @@ import {
   SEO_KEYWORDS,
   SITE_ALTERNATE_NAMES,
   SITE_NAME,
+  INSTAGRAM_URL,
 } from './site'
+
+const DEFAULT_OG_IMAGE = '/logo-excusas.png'
 
 type PageSeoOptions = {
   title: string
@@ -22,7 +25,7 @@ export function buildPageMetadata({
   path = '',
   keywords = [...SEO_KEYWORDS],
   noIndex = false,
-  ogImage = '/logo-excusas.png',
+  ogImage = DEFAULT_OG_IMAGE,
 }: PageSeoOptions): Metadata {
   const siteUrl = getSiteUrl()
   const canonicalPath = path.startsWith('/') ? path : `/${path}`
@@ -75,15 +78,16 @@ export function buildPageMetadata({
 
 export function buildRootMetadata(): Metadata {
   const siteUrl = getSiteUrl()
-  const title = SITE_NAME
+  const title = 'Excusas Jeans | Jeans y Ropa en Perú — excusasjeans.com'
+  const description = DEFAULT_DESCRIPTION
 
   return {
     metadataBase: new URL(siteUrl),
     title: {
       default: title,
-      template: '%s',
+      template: '%s | Excusas Jeans',
     },
-    description: DEFAULT_DESCRIPTION,
+    description,
     keywords: [...SEO_KEYWORDS],
     applicationName: SITE_NAME,
     authors: [{ name: SITE_NAME, url: siteUrl }],
@@ -91,23 +95,24 @@ export function buildRootMetadata(): Metadata {
     publisher: SITE_NAME,
     category: 'shopping',
     icons: {
-      icon: '/logo-excusas.png',
-      shortcut: '/logo-excusas.png',
-      apple: '/logo-excusas.png',
+      icon: DEFAULT_OG_IMAGE,
+      shortcut: DEFAULT_OG_IMAGE,
+      apple: DEFAULT_OG_IMAGE,
     },
     alternates: {
       canonical: '/',
+      languages: { 'es-PE': '/' },
     },
     openGraph: {
       title,
-      description: DEFAULT_DESCRIPTION,
+      description,
       url: siteUrl,
       siteName: SITE_NAME,
       locale: 'es_PE',
       type: 'website',
       images: [
         {
-          url: '/logo-excusas.png',
+          url: DEFAULT_OG_IMAGE,
           width: 1200,
           height: 630,
           alt: 'Excusas Jeans — tienda de jeans en Perú',
@@ -117,8 +122,8 @@ export function buildRootMetadata(): Metadata {
     twitter: {
       card: 'summary_large_image',
       title,
-      description: DEFAULT_DESCRIPTION,
-      images: ['/logo-excusas.png'],
+      description,
+      images: [DEFAULT_OG_IMAGE],
     },
     robots: {
       index: true,
@@ -132,7 +137,8 @@ export function buildRootMetadata(): Metadata {
       },
     },
     other: {
-      'google-site-verification': process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION ?? '',
+      'google-site-verification':
+        process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION ?? '',
     },
   }
 }
@@ -151,7 +157,13 @@ export function buildSiteJsonLd() {
         url: siteUrl,
         logo: `${siteUrl}/logo-excusas.png`,
         description: DEFAULT_DESCRIPTION,
-        sameAs: [] as string[],
+        sameAs: [INSTAGRAM_URL],
+        contactPoint: {
+          '@type': 'ContactPoint',
+          contactType: 'customer service',
+          areaServed: 'PE',
+          availableLanguage: ['Spanish'],
+        },
       },
       {
         '@type': 'WebSite',
